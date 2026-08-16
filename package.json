@@ -1,0 +1,64 @@
+{
+  "name": "ai-cockpit-pme",
+  "version": "0.1.0",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on tcp:3000 && electron .\"",
+    "build:desktop": "next build && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.cockpit.ia",
+    "productName": "Cockpit IA",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "msi"
+      ],
+      "icon": "public/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^0.0.55",
+    "@google/genai": "^2.17.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "@types/nodemailer": "^8.0.1",
+    "ai": "^3.4.33",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.441.0",
+    "next": "^14.2.13",
+    "nodemailer": "^9.0.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.2",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.11",
+    "typescript": "^5",
+    "wait-on": "^9.1.0"
+  }
+}
