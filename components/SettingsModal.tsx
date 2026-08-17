@@ -80,23 +80,30 @@ export function SettingsModal({
   // Customizable System Prompt State
   const [systemPrompt, setSystemPrompt] = useState<string>(DEFAULT_SYSTEM_PROMPT);
 
-  // UNIFIED EMAIL ACCOUNT STATE (IMAP Inbound + SMTP Outbound)
-  const [emailProvider, setEmailProvider] = useState<"gmail" | "outlook" | "custom">("custom");
-  const [emailAddress, setEmailAddress] = useState("");
-  const [emailAppPassword, setEmailAppPassword] = useState("");
-  const [showEmailPassword, setShowEmailPassword] = useState(false);
+  // 1. INBOUND EMAIL STATE (Lecture IMAP des demandes clients)
+  const [inboundProvider, setInboundProvider] = useState<"gmail" | "outlook" | "custom">("gmail");
+  const [inboundEmail, setInboundEmail] = useState("");
+  const [inboundAppPassword, setInboundAppPassword] = useState("");
+  const [showInboundPassword, setShowInboundPassword] = useState(false);
   const [autoSyncEmails, setAutoSyncEmails] = useState(true);
-  const [customImapHost, setCustomImapHost] = useState("imap.votre-domaine.fr:993");
+  const [customImapHost, setCustomImapHost] = useState("imap.gmail.com");
+  const [customImapPort, setCustomImapPort] = useState("993");
+
+  // 2. OUTBOUND EMAIL STATE (Expédition SMTP des devis chiffrés)
+  const [outboundMode, setOutboundMode] = useState<"turbosmtp" | "same_as_inbound" | "custom">("turbosmtp");
   const [customSmtpHost, setCustomSmtpHost] = useState("pro.eu.turbo-smtp.com");
   const [customSmtpPort, setCustomSmtpPort] = useState("465");
   const [customSmtpUser, setCustomSmtpUser] = useState("");
   const [customSmtpPass, setCustomSmtpPass] = useState("");
   const [showCustomSmtpPass, setShowCustomSmtpPass] = useState(false);
 
-  // Email Action Feedback State
-  const [isTestingEmail, setIsTestingEmail] = useState(false);
+  // Separate Action Feedback States
+  const [isTestingImap, setIsTestingImap] = useState(false);
   const [isCheckingEmails, setIsCheckingEmails] = useState(false);
-  const [emailFeedback, setEmailFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [imapFeedback, setImapFeedback] = useState<{ success: boolean; message: string } | null>(null);
+
+  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
+  const [smtpFeedback, setSmtpFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
   // Live Connection Test State (AI)
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -214,15 +221,24 @@ export function SettingsModal({
         setSystemPrompt(savedPrompt);
       }
 
-      // Load Unified Email Credentials
-      const savedEmailProv = localStorage.getItem("cockpit_email_provider") || localStorage.getItem("cockpit_smtp_provider");
-      if (savedEmailProv) setEmailProvider(savedEmailProv as any);
+      // Load Inbound & Outbound Email Credentials
+      const savedInboundProv = (localStorage.getItem("cockpit_inbound_provider") || localStorage.getItem("cockpit_email_provider") || "gmail") as any;
+      setInboundProvider(savedInboundProv);
 
-      const savedEmail = localStorage.getItem("cockpit_email_address") || localStorage.getItem("cockpit_smtp_from");
-      if (savedEmail) setEmailAddress(savedEmail);
+      const savedInboundEmail = localStorage.getItem("cockpit_inbound_email") || localStorage.getItem("cockpit_email_address") || localStorage.getItem("cockpit_smtp_from") || "";
+      if (savedInboundEmail) setInboundEmail(savedInboundEmail);
 
-      const savedEmailPass = localStorage.getItem("cockpit_email_password") || localStorage.getItem("cockpit_smtp_pass");
-      if (savedEmailPass) setEmailAppPassword(savedEmailPass);
+      const savedInboundPass = localStorage.getItem("cockpit_inbound_password") || localStorage.getItem("cockpit_email_password") || "";
+      if (savedInboundPass) setInboundAppPassword(savedInboundPass);
+
+      const savedImapHost = localStorage.getItem("cockpit_inbound_host");
+      if (savedImapHost) setCustomImapHost(savedImapHost);
+
+      const savedImapPort = localStorage.getItem("cockpit_inbound_port");
+      if (savedImapPort) setCustomImapPort(savedImapPort);
+
+      const savedOutboundMode = (localStorage.getItem("cockpit_outbound_mode") || "turbosmtp") as any;
+      setOutboundMode(savedOutboundMode);
 
       const savedSmtpHost = localStorage.getItem("cockpit_smtp_host");
       if (savedSmtpHost) setCustomSmtpHost(savedSmtpHost);
@@ -362,16 +378,40 @@ export function SettingsModal({
       localStorage.setItem("cockpit_custom_base_url", customBaseUrl);
       localStorage.setItem("cockpit_custom_prompt", systemPrompt);
 
-      // Unified Email Account & Custom SMTP
-      localStorage.setItem("cockpit_email_provider", emailProvider);
-      localStorage.setItem("cockpit_email_address", emailAddress);
-      localStorage.setItem("cockpit_email_password", emailAppPassword);
-      localStorage.setItem("cockpit_smtp_provider", emailProvider);
-      localStorage.setItem("cockpit_smtp_from", emailAddress);
-      localStorage.setItem("cockpit_smtp_pass", emailProvider === "custom" ? customSmtpPass : emailAppPassword);
-      localStorage.setItem("cockpit_smtp_host", customSmtpHost);
-      localStorage.setItem("cockpit_smtp_port", customSmtpPort);
-      localStorage.setItem("cockpit_smtp_user", customSmtpUser);
+      // 1. Inbound IMAP Settings
+      localStorage.setItem("cockpit_inbound_provider", inboundProvider);
+      localStorage.setItem("cockpit_inbound_email", inboundEmail);
+      localStorage.setItem("cockpit_inbound_password", inboundAppPassword);
+      localStorage.setItem("cockpit_inbound_host", customImapHost);
+      localStorage.setItem("cockpit_inbound_port", customImapPort);
+
+      // 2. Outbound SMTP Settings
+      localStorage.setItem("cockpit_outbound_mode", outboundMode);
+      localStorage.setItem("cockpit_smtp_from", inboundEmail);
+
+      if (outboundMode === "turbosmtp") {
+        localStorage.setItem("cockpit_smtp_host", "pro.eu.turbo-smtp.com");
+        localStorage.setItem("cockpit_smtp_port", "465");
+        localStorage.setItem("cockpit_smtp_user", customSmtpUser);
+        localStorage.setItem("cockpit_smtp_pass", customSmtpPass);
+      } else if (outboundMode === "same_as_inbound") {
+        const host = inboundProvider === "gmail" ? "smtp.gmail.com" : "smtp.office365.com";
+        const port = inboundProvider === "gmail" ? "465" : "587";
+        localStorage.setItem("cockpit_smtp_host", host);
+        localStorage.setItem("cockpit_smtp_port", port);
+        localStorage.setItem("cockpit_smtp_user", inboundEmail);
+        localStorage.setItem("cockpit_smtp_pass", inboundAppPassword);
+      } else {
+        localStorage.setItem("cockpit_smtp_host", customSmtpHost);
+        localStorage.setItem("cockpit_smtp_port", customSmtpPort);
+        localStorage.setItem("cockpit_smtp_user", customSmtpUser);
+        localStorage.setItem("cockpit_smtp_pass", customSmtpPass);
+      }
+
+      // Backward compatibility keys
+      localStorage.setItem("cockpit_email_provider", inboundProvider);
+      localStorage.setItem("cockpit_email_address", inboundEmail);
+      localStorage.setItem("cockpit_email_password", inboundAppPassword);
 
       // Database Configuration
       localStorage.setItem("cockpit_db_mode", dbMode);
@@ -453,117 +493,144 @@ export function SettingsModal({
     }
   };
 
-  // 1. Unified Email Account Test (IMAP & SMTP Test)
-  const handleTestEmailAccount = async () => {
-    setIsTestingEmail(true);
-    setEmailFeedback(null);
+  // 1. Inbound IMAP Test
+  const handleTestImapConnection = async () => {
+    setIsTestingImap(true);
+    setImapFeedback(null);
 
     try {
-      if (emailProvider === "custom") {
-        const sendRes = await fetch("/api/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: emailAddress.trim(),
-            subject: "Test Connexion SMTP - Cockpit IA",
-            text: "Ceci est un email de test confirmant la bonne configuration de votre serveur SMTP.",
-            smtpConfig: {
-              host: customSmtpHost.trim(),
-              port: parseInt(customSmtpPort, 10) || 465,
-              user: customSmtpUser.trim(),
-              pass: customSmtpPass.trim(),
-              fromEmail: emailAddress.trim(),
-            },
-          }),
-        });
-        const sendData = await sendRes.json();
-        if (sendRes.ok && sendData.success) {
-          setEmailFeedback({
-            success: true,
-            message: sendData.message || `✓ Connecté à ${customSmtpHost} (${customSmtpPort}) avec succès !`,
-          });
-          return;
-        } else {
-          setEmailFeedback({
-            success: false,
-            message: sendData.message || sendData.error || "Échec de connexion SMTP.",
-          });
-          return;
-        }
-      }
-
       const res = await fetch("/api/check-emails", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: emailAddress.trim(),
-          appPassword: emailAppPassword.trim(),
-          provider: emailProvider,
+          email: inboundEmail.trim(),
+          appPassword: inboundAppPassword.trim(),
+          provider: inboundProvider,
           isTestOnly: true,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setEmailFeedback({
+        setImapFeedback({
           success: true,
-          message: data.message || `✓ Connexion réussie à ${emailAddress} !`,
+          message: data.message || `✓ Connexion IMAP validée avec succès pour ${inboundEmail} !`,
         });
       } else {
-        setEmailFeedback({
+        setImapFeedback({
           success: false,
-          message: data.message || "Échec de connexion à la boîte email.",
+          message: data.message || "Échec de connexion IMAP à la boîte email.",
         });
       }
     } catch (err: any) {
-      setEmailFeedback({
+      setImapFeedback({
         success: false,
-        message: "Erreur lors du test de connexion email.",
+        message: "Erreur réseau lors du test IMAP.",
       });
     } finally {
-      setIsTestingEmail(false);
+      setIsTestingImap(false);
     }
   };
 
   // 2. Fetch New Inbound Emails Immediately (Relève manuelle)
   const handleFetchNewEmailsNow = async () => {
     setIsCheckingEmails(true);
-    setEmailFeedback(null);
+    setImapFeedback(null);
 
     try {
       const res = await fetch("/api/check-emails", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: emailAddress.trim(),
-          appPassword: emailAppPassword.trim(),
-          provider: emailProvider,
+          email: inboundEmail.trim(),
+          appPassword: inboundAppPassword.trim(),
+          provider: inboundProvider,
           isTestOnly: false,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setEmailFeedback({
+        setImapFeedback({
           success: true,
-          message: data.message || "✓ Nouveaux emails relevés avec succès !",
+          message: data.message || "✓ Nouvelles demandes clients relevées et analysées avec succès !",
         });
         if (onRequestAdded) {
           onRequestAdded();
         }
       } else {
-        setEmailFeedback({
+        setImapFeedback({
           success: false,
-          message: data.message || "Aucun nouvel email à relever.",
+          message: data.message || "Aucun nouvel email non lu à relever.",
         });
       }
     } catch (err: any) {
-      setEmailFeedback({
+      setImapFeedback({
         success: false,
         message: "Erreur lors de la relève des emails.",
       });
     } finally {
       setIsCheckingEmails(false);
+    }
+  };
+
+  // 3. Outbound SMTP Dispatch Test
+  const handleTestSmtpSending = async () => {
+    setIsTestingSmtp(true);
+    setSmtpFeedback(null);
+
+    try {
+      let host = customSmtpHost.trim();
+      let port = parseInt(customSmtpPort, 10) || 465;
+      let user = customSmtpUser.trim();
+      let pass = customSmtpPass.trim();
+
+      if (outboundMode === "turbosmtp") {
+        host = "pro.eu.turbo-smtp.com";
+        port = 465;
+      } else if (outboundMode === "same_as_inbound") {
+        host = inboundProvider === "gmail" ? "smtp.gmail.com" : "smtp.office365.com";
+        port = inboundProvider === "gmail" ? 465 : 587;
+        user = inboundEmail.trim();
+        pass = inboundAppPassword.trim();
+      }
+
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: inboundEmail.trim() || "commercial@votre-entreprise.fr",
+          subject: "⚡ Test Expédition SMTP Devis — Cockpit IA",
+          text: "Félicitations ! Votre configuration SMTP d'envoi de devis fonctionne parfaitement.",
+          smtpConfig: {
+            host,
+            port,
+            user,
+            pass,
+            fromEmail: inboundEmail.trim() || "commercial@votre-entreprise.fr",
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSmtpFeedback({
+          success: true,
+          message: data.message || `✓ Email de test expédié avec succès via ${host}:${port} !`,
+        });
+      } else {
+        setSmtpFeedback({
+          success: false,
+          message: data.message || data.error || "Échec d'envoi SMTP.",
+        });
+      }
+    } catch (err: any) {
+      setSmtpFeedback({
+        success: false,
+        message: "Erreur lors du test d'envoi SMTP.",
+      });
+    } finally {
+      setIsTestingSmtp(false);
     }
   };
 
@@ -1086,71 +1153,451 @@ export function SettingsModal({
             </div>
           )}
 
-          {/* TAB 2: UNIFIED EMAIL ACCOUNT SETUP (IMAP READING + SMTP SENDING) */}
+          {/* TAB 2: SEPARATED INBOUND & OUTBOUND EMAIL ARCHITECTURE */}
           {activeTab === "email" && (
             <div className="space-y-6">
-              {/* Single Unified Card */}
-              <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 space-y-5 shadow-xl">
-                {/* Header */}
-                <div className="border-b border-slate-800 pb-3">
-                  <div className="flex items-center justify-between">
+              {/* Introduction Banner */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/40 via-slate-900 to-indigo-950/40 border border-blue-500/20 text-xs">
+                <div className="flex items-center gap-2 font-bold text-slate-100 mb-1">
+                  <Mail className="w-4 h-4 text-blue-400" />
+                  <span>Messagerie Professionnelle : Réception Intelligente & Envoi Haute Délivrabilité</span>
+                </div>
+                <p className="text-slate-400 leading-relaxed text-[11px]">
+                  Le système fonctionne en 2 étapes claires : <strong>1. Lecture IMAP</strong> pour récupérer et analyser les demandes des clients envoyées à votre employé, et <strong>2. Envoi SMTP</strong> pour expédier les devis et factures officiels sans passer par les spams.
+                </p>
+              </div>
+
+              {/* CARD 1: INBOUND EMAIL (RECEPTION IMAP DU COMPTE EMPLOYE) */}
+              <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div>
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-blue-400" />
-                      📬 Configuration de la Messagerie Professionnelle (Lecture & Envoi)
+                      <Inbox className="w-4 h-4 text-emerald-400" />
+                      <span>📥 1. Réception & Lecture des Demandes Clients (IMAP)</span>
                     </h3>
-                    <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-md bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> Compte Unique
-                    </span>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Connectez la boîte de réception de l'employé (Google Workspace, Gmail, Outlook ou Webmail)
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Connectez votre boîte Gmail, Outlook ou messagerie d'entreprise pour lire les demandes entrantes et expédier les devis validés automatiquement.
-                  </p>
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 uppercase tracking-wider">
+                    Inbound IMAP
+                  </span>
                 </div>
 
-                {/* Form Fields Grid */}
+                {/* Inbound Provider Selector Buttons */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-2">
+                    Type de Boîte Email de l'Employé :
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInboundProvider("gmail");
+                        setCustomImapHost("imap.gmail.com");
+                        setCustomImapPort("993");
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        inboundProvider === "gmail"
+                          ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/30"
+                          : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="font-bold text-xs flex items-center gap-1.5">
+                        <span>🌐 Google / Gmail</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono mt-1">imap.gmail.com:993</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInboundProvider("outlook");
+                        setCustomImapHost("outlook.office365.com");
+                        setCustomImapPort("993");
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        inboundProvider === "outlook"
+                          ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/30"
+                          : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="font-bold text-xs flex items-center gap-1.5">
+                        <span>🏢 Microsoft Outlook / 365</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono mt-1">outlook.office365.com:993</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInboundProvider("custom");
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        inboundProvider === "custom"
+                          ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/30"
+                          : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="font-bold text-xs flex items-center gap-1.5">
+                        <span>🌐 Webmail Entreprise / cPanel</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono mt-1">Serveur IMAP Personnalisé</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Email Address & App Password Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Fournisseur de Messagerie :
-                    </label>
-                    <select
-                      value={emailProvider}
-                      onChange={(e) => {
-                        const val = e.target.value as any;
-                        setEmailProvider(val);
-                      }}
-                      className="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl px-3 text-slate-200 text-xs focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="custom">turboSMTP / Serveur SMTP Dédié (Recommandé)</option>
-                      <option value="gmail">Gmail / Google Workspace</option>
-                      <option value="outlook">Outlook / Microsoft 365</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Adresse Email Expéditeur :
+                      Adresse Email de l'Employé :
                     </label>
                     <input
                       type="email"
-                      value={emailAddress}
-                      onChange={(e) => setEmailAddress(e.target.value)}
+                      value={inboundEmail}
+                      onChange={(e) => setInboundEmail(e.target.value)}
                       placeholder="commercial@votre-entreprise.fr"
-                      className="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl px-3 text-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      className="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl px-3.5 text-slate-200 text-xs focus:outline-none focus:border-blue-500"
                     />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-300">
+                        Mot de Passe d'Application (16 lettres) :
+                      </label>
+                      {inboundProvider === "gmail" && (
+                        <a
+                          href="https://myaccount.google.com/apppasswords"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-blue-400 hover:text-blue-300 underline font-semibold"
+                        >
+                          Créer sur Google ↗
+                        </a>
+                      )}
+                      {inboundProvider === "outlook" && (
+                        <a
+                          href="https://account.live.com/proofs/AppPassword"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-blue-400 hover:text-blue-300 underline font-semibold"
+                        >
+                          Créer sur Microsoft ↗
+                        </a>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showInboundPassword ? "text" : "password"}
+                        value={inboundAppPassword}
+                        onChange={(e) => setInboundAppPassword(e.target.value)}
+                        placeholder="xxxx xxxx xxxx xxxx"
+                        className="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl px-3.5 pr-10 text-slate-200 font-mono text-xs focus:outline-none focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowInboundPassword(!showInboundPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
+                      >
+                        {showInboundPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Conditional Fields based on Provider */}
-                {emailProvider === "custom" ? (
-                  <div className="space-y-3 p-4 rounded-xl bg-slate-900/60 border border-slate-800 animate-fade-in text-xs">
+                {/* Custom IMAP Host & Port (If Webmail selected) */}
+                {inboundProvider === "custom" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 animate-fade-in">
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-400 font-medium mb-1">Hôte IMAP (Serveur de Réception) :</label>
+                      <input
+                        type="text"
+                        value={customImapHost}
+                        onChange={(e) => setCustomImapHost(e.target.value)}
+                        placeholder="mail.votre-entreprise.fr ou imap.ovh.net"
+                        className="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg px-3 font-mono text-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 font-medium mb-1">Port IMAP (SSL) :</label>
+                      <input
+                        type="text"
+                        value={customImapPort}
+                        onChange={(e) => setCustomImapPort(e.target.value)}
+                        placeholder="993"
+                        className="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg px-3 font-mono text-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Step-by-Step Interactive Guide Box */}
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-200">
+                    <HelpCircle className="w-3.5 h-3.5 text-blue-400" />
+                    <span>
+                      Comment activer la lecture du compte {inboundProvider === "gmail" ? "Gmail" : inboundProvider === "outlook" ? "Outlook" : "Webmail"} en 3 étapes :
+                    </span>
+                  </div>
+                  {inboundProvider === "gmail" && (
+                    <ol className="list-decimal list-inside space-y-1 text-slate-400 pl-1 leading-relaxed">
+                      <li>Activez la validation en 2 étapes sur votre compte Google.</li>
+                      <li>
+                        Ouvrez directement la page :{" "}
+                        <a
+                          href="https://myaccount.google.com/apppasswords"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-400 underline font-semibold hover:text-blue-300"
+                        >
+                          myaccount.google.com/apppasswords ↗
+                        </a>
+                      </li>
+                      <li>Créez un mot de passe nommé <em>« Cockpit IA »</em> et collez les 16 lettres ci-dessus.</li>
+                    </ol>
+                  )}
+                  {inboundProvider === "outlook" && (
+                    <ol className="list-decimal list-inside space-y-1 text-slate-400 pl-1 leading-relaxed">
+                      <li>
+                        Connectez-vous à la page de sécurité Microsoft :{" "}
+                        <a
+                          href="https://account.live.com/proofs/AppPassword"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-400 underline font-semibold hover:text-blue-300"
+                        >
+                          account.live.com/proofs/AppPassword ↗
+                        </a>
+                      </li>
+                      <li>Générez un mot de passe d'application pour <em>« Cockpit IA »</em>.</li>
+                      <li>Collez le mot de passe généré dans le champ ci-dessus.</li>
+                    </ol>
+                  )}
+                  {inboundProvider === "custom" && (
+                    <p className="text-slate-400">
+                      Renseignez l'adresse de votre serveur IMAP d'entreprise (ex: <code className="text-slate-300 font-mono">mail.votre-entreprise.fr:993</code>) et vos identifiants habituels.
+                    </p>
+                  )}
+                </div>
+
+                {/* Auto Sync Toggle & Action Buttons */}
+                <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <label className="flex items-center gap-2 text-slate-300 font-medium cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={autoSyncEmails}
+                      onChange={(e) => setAutoSyncEmails(e.target.checked)}
+                      className="w-4 h-4 rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
+                    />
+                    <span className="text-xs">Relève automatique toutes les minutes</span>
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleTestImapConnection}
+                      disabled={isTestingImap}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold border border-slate-700 transition-all cursor-pointer disabled:opacity-60 text-xs"
+                    >
+                      {isTestingImap ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                          <span>Test IMAP...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-3.5 h-3.5 text-amber-400" />
+                          <span>⚡ Tester IMAP</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleFetchNewEmailsNow}
+                      disabled={isCheckingEmails}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-600/25 transition-all cursor-pointer disabled:opacity-60 text-xs"
+                    >
+                      {isCheckingEmails ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                          <span>Relève en cours...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Inbox className="w-3.5 h-3.5" />
+                          <span>📥 Relever les emails (IA)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* IMAP Feedback Alert */}
+                {imapFeedback && (
+                  <div
+                    className={`p-3 rounded-lg border flex items-center gap-2 text-xs animate-fade-in ${
+                      imapFeedback.success
+                        ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-300"
+                        : "bg-rose-950/60 border-rose-500/40 text-rose-300"
+                    }`}
+                  >
+                    {imapFeedback.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    )}
+                    <span>{imapFeedback.message}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* CARD 2: OUTBOUND EMAIL (ENVOI SMTP DES DEVIS & FACTURES) */}
+              <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-blue-400" />
+                      <span>🚀 2. Envoi des Devis & Réponses aux Clients (SMTP)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Expédie les devis validés automatiquement aux clients avec haute délivrabilité
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 uppercase tracking-wider">
+                    Outbound SMTP
+                  </span>
+                </div>
+
+                {/* Outbound Mode Selector Buttons */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-2">
+                    Méthode d'Expédition des Devis :
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* Mode 1: turboSMTP (Recommended) */}
+                    <button
+                      type="button"
+                      onClick={() => setOutboundMode("turbosmtp")}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        outboundMode === "turbosmtp"
+                          ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/30"
+                          : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                      }`}
+                    >
+                      <div>
+                        <div className="font-bold text-xs flex items-center gap-1.5 text-amber-300">
+                          <span>👑 turboSMTP (Recommandé)</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Zéro Spam & Délivrabilité garantie pour PME.
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-blue-400 font-mono mt-2">pro.eu.turbo-smtp.com:465</span>
+                    </button>
+
+                    {/* Mode 2: Same as Inbound */}
+                    <button
+                      type="button"
+                      onClick={() => setOutboundMode("same_as_inbound")}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        outboundMode === "same_as_inbound"
+                          ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/30"
+                          : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                      }`}
+                    >
+                      <div>
+                        <div className="font-bold text-xs flex items-center gap-1.5">
+                          <span>⚡ Même compte ({inboundProvider === "gmail" ? "Gmail" : "Outlook"})</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Utilise directement le compte configuré à l'étape 1.
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-semibold mt-2">1 Clic Automatique</span>
+                    </button>
+
+                    {/* Mode 3: Custom SMTP */}
+                    <button
+                      type="button"
+                      onClick={() => setOutboundMode("custom")}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        outboundMode === "custom"
+                          ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/30"
+                          : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                      }`}
+                    >
+                      <div>
+                        <div className="font-bold text-xs flex items-center gap-1.5">
+                          <span>🖥️ Serveur SMTP Dédié / cPanel</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Configuration avancée avec hôte et port personnalisés.
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono mt-2">Custom SMTP Host</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Form Fields for turboSMTP / Custom */}
+                {outboundMode === "turbosmtp" && (
+                  <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3 animate-fade-in text-xs">
                     <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                       <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                        <Server className="w-3.5 h-3.5 text-blue-400" />
-                        Paramètres du Serveur SMTP (turboSMTP / Dédié) :
+                        <Server className="w-3.5 h-3.5 text-amber-400" />
+                        Identifiants turboSMTP (
+                        <a
+                          href="https://serversmtp.com/"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-400 underline hover:text-blue-300"
+                        >
+                          serversmtp.com ↗
+                        </a>
+                        ) :
                       </span>
+                      <span className="text-[10px] text-emerald-400 font-mono">SSL 465 Préconfiguré</span>
                     </div>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 font-medium mb-1">Identifiant SMTP (Consumer Key) :</label>
+                        <input
+                          type="text"
+                          value={customSmtpUser}
+                          onChange={(e) => setCustomSmtpUser(e.target.value)}
+                          placeholder="08049ca61a52869cd262"
+                          className="w-full h-10 bg-slate-950 border border-slate-800 rounded-lg px-3 font-mono text-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 font-medium mb-1">Mot de Passe SMTP (Consumer Secret) :</label>
+                        <div className="relative">
+                          <input
+                            type={showCustomSmtpPass ? "text" : "password"}
+                            value={customSmtpPass}
+                            onChange={(e) => setCustomSmtpPass(e.target.value)}
+                            placeholder="NkR46nSfCdg39iVwFPOq"
+                            className="w-full h-10 bg-slate-950 border border-slate-800 rounded-lg px-3 pr-10 font-mono text-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCustomSmtpPass(!showCustomSmtpPass)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
+                          >
+                            {showCustomSmtpPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {outboundMode === "custom" && (
+                  <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3 animate-fade-in text-xs">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-slate-400 font-medium mb-1">Hôte SMTP :</label>
@@ -1158,7 +1605,7 @@ export function SettingsModal({
                           type="text"
                           value={customSmtpHost}
                           onChange={(e) => setCustomSmtpHost(e.target.value)}
-                          placeholder="pro.eu.turbo-smtp.com"
+                          placeholder="mail.votre-domaine.fr"
                           className="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg px-3 font-mono text-slate-200 text-xs focus:outline-none focus:border-blue-500"
                         />
                       </div>
@@ -1176,23 +1623,23 @@ export function SettingsModal({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-slate-400 font-medium mb-1">Identifiant / Username :</label>
+                        <label className="block text-slate-400 font-medium mb-1">Identifiant SMTP :</label>
                         <input
                           type="text"
                           value={customSmtpUser}
                           onChange={(e) => setCustomSmtpUser(e.target.value)}
-                          placeholder="08049ca61a52869cd262"
+                          placeholder="votre_utilisateur"
                           className="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg px-3 font-mono text-slate-200 text-xs focus:outline-none focus:border-blue-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-400 font-medium mb-1">Mot de Passe / Clé Secrète :</label>
+                        <label className="block text-slate-400 font-medium mb-1">Mot de Passe SMTP :</label>
                         <div className="relative">
                           <input
                             type={showCustomSmtpPass ? "text" : "password"}
                             value={customSmtpPass}
                             onChange={(e) => setCustomSmtpPass(e.target.value)}
-                            placeholder="NkR46nSfCdg39iVwFPOq"
+                            placeholder="••••••••••••"
                             className="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg px-3 pr-10 font-mono text-slate-200 text-xs focus:outline-none focus:border-blue-500"
                           />
                           <button
@@ -1206,170 +1653,74 @@ export function SettingsModal({
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Mot de Passe d'Application ({emailProvider === "gmail" ? "Google App Password" : "Microsoft"}) :
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showEmailPassword ? "text" : "password"}
-                        value={emailAppPassword}
-                        onChange={(e) => setEmailAppPassword(e.target.value)}
-                        placeholder="xxxx xxxx xxxx xxxx"
-                        className="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl px-3.5 pr-10 text-slate-200 font-mono text-xs focus:outline-none focus:border-blue-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowEmailPassword(!showEmailPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
-                      >
-                        {showEmailPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
+                )}
+
+                {outboundMode === "same_as_inbound" && (
+                  <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/25 text-emerald-300 text-[11px] flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>
+                      Les devis seront expédiés avec l'adresse <strong>{inboundEmail || "de votre employé"}</strong> via le serveur SMTP officiel ({inboundProvider === "gmail" ? "smtp.gmail.com:465" : "smtp.office365.com:587"}).
+                    </span>
                   </div>
                 )}
 
-                {/* Auto Sync Toggle */}
-                <div className="pt-1">
-                  <label className="flex items-center gap-2.5 text-slate-300 font-medium cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={autoSyncEmails}
-                      onChange={(e) => setAutoSyncEmails(e.target.checked)}
-                      className="w-4 h-4 rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
-                    />
-                    <span>Relève automatique des nouveaux emails (Toutes les minutes)</span>
-                  </label>
+                {/* SMTP Action Bar */}
+                <div className="pt-2 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={handleTestSmtpSending}
+                    disabled={isTestingSmtp}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-600/25 transition-all cursor-pointer disabled:opacity-60 text-xs"
+                  >
+                    {isTestingSmtp ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                        <span>Envoi du test SMTP...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3.5 h-3.5 text-amber-300" />
+                        <span>⚡ Tester l'Envoi SMTP (Email de test)</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
-                {/* Feedback message */}
-                {emailFeedback && (
+                {/* SMTP Feedback Alert */}
+                {smtpFeedback && (
                   <div
                     className={`p-3 rounded-lg border flex items-center gap-2 text-xs animate-fade-in ${
-                      emailFeedback.success
+                      smtpFeedback.success
                         ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-300"
                         : "bg-rose-950/60 border-rose-500/40 text-rose-300"
                     }`}
                   >
-                    {emailFeedback.success ? (
+                    {smtpFeedback.success ? (
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     ) : (
                       <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                     )}
-                    <span>{emailFeedback.message}</span>
+                    <span>{smtpFeedback.message}</span>
                   </div>
                 )}
-
-                {/* Two Action Buttons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={handleTestEmailAccount}
-                    disabled={isTestingEmail}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold border border-slate-700 transition-all cursor-pointer disabled:opacity-60 text-xs"
-                  >
-                    {isTestingEmail ? (
-                      <>
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
-                        <span>Vérification en cours...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-3.5 h-3.5 text-amber-400" />
-                        <span>⚡ Tester la Connexion & Envoi</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleFetchNewEmailsNow}
-                    disabled={isCheckingEmails}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-600/25 transition-all cursor-pointer disabled:opacity-60 text-xs"
-                  >
-                    {isCheckingEmails ? (
-                      <>
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
-                        <span>Relève en cours...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Inbox className="w-3.5 h-3.5" />
-                        <span>📥 Relever les emails maintenant</span>
-                      </>
-                    )}
-                  </button>
-                </div>
               </div>
 
-              {/* Dynamic Quick Setup Guide based on Selected Provider */}
-              <div className="mt-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs space-y-2">
+              {/* CARD 3: PEDAGOGICAL ARCHITECTURE GUIDE FOR NON-DEVELOPERS */}
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs space-y-2.5">
                 <div className="flex items-center gap-2 font-bold text-slate-200">
-                  <HelpCircle className="w-4 h-4 text-blue-400" />
-                  <span>
-                    Guide de configuration rapide (
-                    {emailProvider === "gmail"
-                      ? "Gmail / Workspace"
-                      : emailProvider === "outlook"
-                      ? "Outlook / Microsoft 365"
-                      : "turboSMTP / Serveur Pro"}
-                    ) :
-                  </span>
+                  <Sparkles className="w-4 h-4 text-blue-400" />
+                  <span>💡 Comprendre l'Architecture : Pourquoi Deux Protocoles ?</span>
                 </div>
-
-                {emailProvider === "gmail" && (
-                  <ol className="list-decimal list-inside space-y-1.5 text-slate-400 pl-1 leading-relaxed">
-                    <li>Activez la validation en 2 étapes sur votre compte Google.</li>
-                    <li>
-                      Ouvrez directement la page :{" "}
-                      <a
-                        href="https://myaccount.google.com/apppasswords"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-400 underline font-semibold hover:text-blue-300"
-                      >
-                        myaccount.google.com/apppasswords ↗
-                      </a>
-                    </li>
-                    <li>Créez un mot de passe nommé <em>« Cockpit IA »</em> et collez les 16 lettres ci-dessus.</li>
-                  </ol>
-                )}
-
-                {emailProvider === "outlook" && (
-                  <ol className="list-decimal list-inside space-y-1.5 text-slate-400 pl-1 leading-relaxed">
-                    <li>
-                      Connectez-vous à votre compte Microsoft sur :{" "}
-                      <a
-                        href="https://account.live.com/proofs/AppPassword"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-400 underline font-semibold hover:text-blue-300"
-                      >
-                        account.live.com/proofs/AppPassword ↗
-                      </a>
-                    </li>
-                    <li>Assurez-vous que la vérification en 2 étapes est active dans la section <em>Sécurité avancée</em>.</li>
-                    <li>
-                      Générez un mot de passe d'application pour <em>« Cockpit IA »</em> et collez-le ci-dessus (Serveur:{" "}
-                      <code className="text-slate-300 font-mono">smtp.office365.com:587</code>).
-                    </li>
-                  </ol>
-                )}
-
-                {emailProvider === "custom" && (
-                  <ol className="list-decimal list-inside space-y-1.5 text-slate-400 pl-1 leading-relaxed">
-                    <li>
-                      Renseignez le Host (<code className="text-slate-300 font-mono">pro.eu.turbo-smtp.com</code>) et le Port (
-                      <code className="text-slate-300 font-mono">465</code>).
-                    </li>
-                    <li>
-                      Collez votre Consumer Key dans <strong>Identifiant SMTP</strong> et votre Consumer Secret dans{" "}
-                      <strong>Mot de Passe</strong>.
-                    </li>
-                    <li>Vos devis seront expédiés avec une délivrabilité professionnelle garantie.</li>
-                  </ol>
-                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] text-slate-400 leading-relaxed">
+                  <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800">
+                    <span className="font-bold text-emerald-400 block mb-1">📥 IMAP (Lecture & Réception) :</span>
+                    Sert à ouvrir la boîte de réception de l'employé pour que l'IA puisse lire les emails des clients, extraire les articles demandés et préparer les devis.
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800">
+                    <span className="font-bold text-blue-400 block mb-1">🚀 SMTP / turboSMTP (Expédition) :</span>
+                    Sert à déposer les devis chez le client. Des services comme <strong>turboSMTP</strong> garantissent que le devis arrive directement dans la boîte de réception du client sans passer par les spams.
+                  </div>
+                </div>
               </div>
             </div>
           )}
