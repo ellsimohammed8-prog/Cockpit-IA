@@ -10,11 +10,19 @@ export async function POST(req: Request) {
     const emailText = text || legacyBody || "Bonjour, veuillez trouver ci-joint votre devis commercial.";
     const emailSubject = subject || "Votre devis commercial - Cockpit IA";
 
-    const host = smtpConfig?.host || smtpConfig?.smtpServer || "pro.eu.turbo-smtp.com";
-    const port = Number(smtpConfig?.port || smtpConfig?.smtpPort) || 465;
-    const user = smtpConfig?.user || smtpConfig?.fromEmail || "08049ca61a52869cd262";
-    const pass = smtpConfig?.pass || smtpConfig?.apiKeyOrPassword || "NkR46nSfCdg39iVwFPOq";
+    const host = smtpConfig?.host || smtpConfig?.smtpServer || process.env.SMTP_HOST || "pro.eu.turbo-smtp.com";
+    const port = Number(smtpConfig?.port || smtpConfig?.smtpPort) || Number(process.env.SMTP_PORT) || 465;
+    const user = smtpConfig?.user || process.env.SMTP_USER || "";
+    const pass = smtpConfig?.pass || process.env.SMTP_PASS || "";
     const fromEmail = smtpConfig?.fromEmail || (user.includes("@") ? user : "commercial@votre-entreprise.fr");
+
+    if (!user || !pass) {
+      return NextResponse.json({
+        success: true,
+        isSimulation: true,
+        message: `✓ [Mode Démonstration] Devis expédié (simulation). Pour un envoi réel à vos clients, configurez vos identifiants dans l'onglet Messagerie Pro.`,
+      });
+    }
 
     const transporter = nodemailer.createTransport({
       host,

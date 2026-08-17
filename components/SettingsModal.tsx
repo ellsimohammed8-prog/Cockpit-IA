@@ -82,15 +82,15 @@ export function SettingsModal({
 
   // UNIFIED EMAIL ACCOUNT STATE (IMAP Inbound + SMTP Outbound)
   const [emailProvider, setEmailProvider] = useState<"gmail" | "outlook" | "custom">("custom");
-  const [emailAddress, setEmailAddress] = useState("commercial@votre-entreprise.fr");
+  const [emailAddress, setEmailAddress] = useState("");
   const [emailAppPassword, setEmailAppPassword] = useState("");
   const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [autoSyncEmails, setAutoSyncEmails] = useState(true);
   const [customImapHost, setCustomImapHost] = useState("imap.votre-domaine.fr:993");
   const [customSmtpHost, setCustomSmtpHost] = useState("pro.eu.turbo-smtp.com");
   const [customSmtpPort, setCustomSmtpPort] = useState("465");
-  const [customSmtpUser, setCustomSmtpUser] = useState("08049ca61a52869cd262");
-  const [customSmtpPass, setCustomSmtpPass] = useState("NkR46nSfCdg39iVwFPOq");
+  const [customSmtpUser, setCustomSmtpUser] = useState("");
+  const [customSmtpPass, setCustomSmtpPass] = useState("");
   const [showCustomSmtpPass, setShowCustomSmtpPass] = useState(false);
 
   // Email Action Feedback State
