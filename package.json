@@ -17,10 +17,12 @@
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "**/*"
+    ],
     "win": {
       "target": [
-        "nsis",
-        "msi"
+        "nsis"
       ],
       "icon": "public/favicon.ico"
     },
@@ -29,7 +31,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
-    }
+    },
+    "asar": false
   },
   "dependencies": {
     "@ai-sdk/google": "^0.0.55",
