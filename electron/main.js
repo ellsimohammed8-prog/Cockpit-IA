@@ -123,17 +123,57 @@ function getLoadingHTML() {
       max-width: 480px;
       text-align: center;
     }
-    .logo-container {
-      width: 64px;
-      height: 64px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    .brand-emblem {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      border-radius: 20px;
+      background: #0a0e1a;
+      border: 1px solid rgba(56, 189, 248, 0.25);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 25px rgba(37, 99, 235, 0.45);
+      box-shadow: 0 12px 35px -6px rgba(0, 0, 0, 0.8), 0 0 25px rgba(37, 99, 235, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15);
       margin-bottom: 20px;
-      font-size: 28px;
+      overflow: hidden;
+    }
+    .glow-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.3) 0%, rgba(99, 102, 241, 0.15) 50%, transparent 75%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+    .emblem-svg {
+      width: 54px;
+      height: 54px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+    }
+    .outer-arc {
+      transform-origin: 50px 50px;
+      animation: spinClockwise 8s linear infinite;
+    }
+    .inner-arc {
+      transform-origin: 50px 50px;
+      animation: spinCounterClockwise 5s linear infinite;
+    }
+    .core-sphere {
+      transform-origin: 50px 50px;
+      animation: pulseQuantum 2.5s ease-in-out infinite alternate;
+    }
+    @keyframes spinClockwise {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes spinCounterClockwise {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+    @keyframes pulseQuantum {
+      0% { transform: scale(0.92); opacity: 0.88; }
+      100% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9)); }
     }
     .title {
       font-size: 20px;
@@ -149,13 +189,13 @@ function getLoadingHTML() {
       line-height: 1.4;
     }
     .spinner-ring {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border: 3px solid rgba(59, 130, 246, 0.15);
-      border-top-color: #3b82f6;
+      border-top-color: #38bdf8;
       border-radius: 50%;
       animation: spin 0.9s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
@@ -163,7 +203,7 @@ function getLoadingHTML() {
     .status-text {
       font-size: 12px;
       font-weight: 500;
-      color: #60a5fa;
+      color: #38bdf8;
       letter-spacing: 0.01em;
     }
     .steps {
@@ -187,14 +227,39 @@ function getLoadingHTML() {
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: #3b82f6;
-      box-shadow: 0 0 8px #3b82f6;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo-container">⚡</div>
+    <div class="brand-emblem">
+      <div class="glow-bg"></div>
+      <svg class="emblem-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle class="outer-arc" cx="50" cy="50" r="38" stroke="url(#cyanGrad)" stroke-width="5" stroke-linecap="round" stroke-dasharray="190 50" />
+        <circle class="inner-arc" cx="50" cy="50" r="26" stroke="url(#purpleGrad)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="125 40" />
+        <circle class="core-sphere" cx="50" cy="50" r="13" fill="url(#coreGrad)" />
+        <defs>
+          <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00f2fe" />
+            <stop offset="50%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#2563eb" />
+          </linearGradient>
+          <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="60%" stop-color="#818cf8" />
+            <stop offset="100%" stop-color="#c084fc" />
+          </linearGradient>
+          <radialGradient id="coreGrad" cx="38%" cy="38%" r="62%">
+            <stop offset="0%" stop-color="#67e8f9" />
+            <stop offset="45%" stop-color="#38bdf8" />
+            <stop offset="85%" stop-color="#1d4ed8" />
+            <stop offset="100%" stop-color="#0f2b66" />
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
     <div class="title">Cockpit IA</div>
     <div class="subtitle">Gestion Commerciale & Automatisation des Ventes</div>
     <div class="spinner-ring"></div>
@@ -235,10 +300,61 @@ function getRecoveryHTML() {
       max-width: 520px;
       text-align: center;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .icon {
-      font-size: 36px;
-      margin-bottom: 16px;
+    .brand-emblem {
+      position: relative;
+      width: 70px;
+      height: 70px;
+      border-radius: 18px;
+      background: #0a0e1a;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8), 0 0 25px rgba(37, 99, 235, 0.35);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .glow-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.3) 0%, rgba(99, 102, 241, 0.15) 50%, transparent 75%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+    .emblem-svg {
+      width: 50px;
+      height: 50px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+    }
+    .outer-arc {
+      transform-origin: 50px 50px;
+      animation: spinClockwise 8s linear infinite;
+    }
+    .inner-arc {
+      transform-origin: 50px 50px;
+      animation: spinCounterClockwise 5s linear infinite;
+    }
+    .core-sphere {
+      transform-origin: 50px 50px;
+      animation: pulseQuantum 2.5s ease-in-out infinite alternate;
+    }
+    @keyframes spinClockwise {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes spinCounterClockwise {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+    @keyframes pulseQuantum {
+      0% { transform: scale(0.92); opacity: 0.88; }
+      100% { transform: scale(1.08); opacity: 1; }
     }
     h2 {
       font-size: 18px;
