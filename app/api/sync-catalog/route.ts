@@ -25,47 +25,118 @@ function cleanQuantity(val: any): number {
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { url, sheetsUrl, products } = body;
 
-    if (!url || typeof url !== "string" || !url.trim()) {
+    // 1. Direct products array upload (from drag & drop / file picker)
+    if (Array.isArray(products) && products.length > 0) {
+      const sanitizedProducts: ProductStockRecord[] = products.map((p: any, idx: number) => ({
+        id: p.id || `prod_${Date.now()}_${idx}`,
+        sku: String(p.sku || `SKU-${1000 + idx}`).trim(),
+        name: String(p.name || `Article ${idx + 1}`).trim(),
+        quantity_available: typeof p.quantity_available === "number" ? p.quantity_available : cleanQuantity(p.quantity_available),
+        unit_price_cents: typeof p.unit_price_cents === "number" ? p.unit_price_cents : cleanPriceToCents(p.unit_price_cents),
+        category: p.category ? String(p.category).trim() : "Catalogue Général",
+      }));
+
+      const saved = await db.setProducts(sanitizedProducts);
+      return NextResponse.json({
+        success: true,
+        count: saved.length,
+        products: saved,
+        message: `✓ Synchronisation réussie : ${saved.length} produit(s) importé(s) dans le catalogue.`,
+      });
+    }
+
+    // 2. Remote URL sync (Google Sheets / Public URL)
+    const targetUrl = (sheetsUrl || url || "").trim();
+
+    if (!targetUrl) {
       return NextResponse.json(
-        { success: false, error: "Veuillez fournir une URL valide de Google Sheet ou fichier Excel/CSV." },
+        { success: false, error: "Veuillez fournir une URL valide de Google Sheet ou déposer un fichier Excel/CSV." },
         { status: 400 }
       );
     }
 
-    let fetchUrl = url.trim();
-
-    // 1. Google Sheets auto-formatting to CSV export
+    let fetchUrl = targetUrl;
     const googleSheetMatch = fetchUrl.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    
+    let buffer: Buffer | null = null;
+
     if (googleSheetMatch) {
       const sheetId = googleSheetMatch[1];
       const gidMatch = fetchUrl.match(/[#&?]gid=([0-9]+)/);
       const gid = gidMatch ? gidMatch[1] : "0";
-      fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-    }
 
-    // 2. Fetch the remote file (CSV / Excel / Sheet)
-    const response = await fetch(fetchUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "*/*",
-      },
-      redirect: "follow",
-    });
-
-    if (!response.ok) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Impossible de récupérer le document (${response.status} ${response.statusText}). Assurez-vous que le lien est partagé publiquement ("Tous les utilisateurs disposant du lien peuvent voir").`,
+      // Attempt primary export endpoint
+      const primaryUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+      const primaryRes = await fetch(primaryUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "*/*",
         },
-        { status: 400 }
-      );
-    }
+        redirect: "follow",
+      });
 
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+      if (primaryRes.ok) {
+        const text = await primaryRes.text();
+        // Check if Google returned HTML login page instead of CSV
+        if (!text.trim().startsWith("<!DOCTYPE") && !text.includes("<html")) {
+          buffer = Buffer.from(text, "utf-8");
+        }
+      }
+
+      // Fallback endpoint: Google Visualisation API (GViz)
+      if (!buffer) {
+        const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;
+        const gvizRes = await fetch(gvizUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "*/*",
+          },
+          redirect: "follow",
+        });
+
+        if (gvizRes.ok) {
+          const gvizText = await gvizRes.text();
+          if (!gvizText.trim().startsWith("<!DOCTYPE") && !gvizText.includes("<html")) {
+            buffer = Buffer.from(gvizText, "utf-8");
+          }
+        }
+      }
+
+      if (!buffer) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Impossible d'accéder au Google Sheet. Assurez-vous que le partage est activé sur 'Tous les utilisateurs disposant du lien peuvent voir' (Anyone with the link).",
+          },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Direct remote file (CSV / XLSX)
+      const response = await fetch(fetchUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "*/*",
+        },
+        redirect: "follow",
+      });
+
+      if (!response.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Impossible de récupérer le document distant (${response.status} ${response.statusText}).`,
+          },
+          { status: 400 }
+        );
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    }
 
     // 3. Parse with SheetJS / XLSX
     const workbook = XLSX.read(buffer, { type: "buffer" });
@@ -95,23 +166,23 @@ export async function POST(req: NextRequest) {
     let priceCol = -1;
     let catCol = -1;
 
-    for (let i = 0; i < Math.min(5, rawData.length); i++) {
+    for (let i = 0; i < Math.min(6, rawData.length); i++) {
       const row = rawData[i].map((c) => String(c).toLowerCase().trim());
       const hasSku = row.some((c) => c.includes("sku") || c.includes("code") || c.includes("ref") || c.includes("id"));
-      const hasName = row.some((c) => c.includes("nom") || c.includes("name") || c.includes("designation") || c.includes("produit") || c.includes("article") || c.includes("description"));
-      
+      const hasName = row.some((c) => c.includes("nom") || c.includes("name") || c.includes("designation") || c.includes("produit") || c.includes("article") || c.includes("description") || c.includes("item") || c.includes("title"));
+
       if (hasSku || hasName) {
         headerRowIndex = i;
         row.forEach((colName, colIdx) => {
-          if (skuCol === -1 && (colName.includes("sku") || colName.includes("code") || colName === "ref" || colName === "reference")) {
+          if (skuCol === -1 && (colName.includes("sku") || colName.includes("code") || colName === "ref" || colName === "reference" || colName === "id")) {
             skuCol = colIdx;
-          } else if (nameCol === -1 && (colName.includes("nom") || colName.includes("name") || colName.includes("designation") || colName.includes("produit") || colName.includes("article") || colName.includes("description") || colName.includes("titre"))) {
+          } else if (nameCol === -1 && (colName.includes("nom") || colName.includes("name") || colName.includes("designation") || colName.includes("produit") || colName.includes("article") || colName.includes("description") || colName.includes("item") || colName.includes("title"))) {
             nameCol = colIdx;
-          } else if (qtyCol === -1 && (colName.includes("qte") || colName.includes("quant") || colName.includes("stock") || colName.includes("dispo") || colName.includes("count"))) {
+          } else if (qtyCol === -1 && (colName.includes("qte") || colName.includes("quant") || colName.includes("stock") || colName.includes("dispo") || colName.includes("count") || colName.includes("qty"))) {
             qtyCol = colIdx;
-          } else if (priceCol === -1 && (colName.includes("prix") || colName.includes("price") || colName.includes("tarif") || colName.includes("ht") || colName.includes("pu"))) {
+          } else if (priceCol === -1 && (colName.includes("prix") || colName.includes("price") || colName.includes("tarif") || colName.includes("ht") || colName.includes("pu") || colName.includes("rate") || colName.includes("unit"))) {
             priceCol = colIdx;
-          } else if (catCol === -1 && (colName.includes("cat") || colName.includes("rayon") || colName.includes("type") || colName.includes("famille"))) {
+          } else if (catCol === -1 && (colName.includes("cat") || colName.includes("rayon") || colName.includes("type") || colName.includes("famille") || colName.includes("group"))) {
             catCol = colIdx;
           }
         });
@@ -119,7 +190,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Fallbacks if columns not identified by name
     if (skuCol === -1) skuCol = 0;
     if (nameCol === -1) nameCol = 1;
     if (qtyCol === -1) qtyCol = 2;
@@ -133,20 +203,19 @@ export async function POST(req: NextRequest) {
       const row = rawData[r];
       if (!row || row.length === 0) continue;
 
-      const rawSku = row[skuCol] ? String(row[skuCol]).trim() : "";
-      const rawName = row[nameCol] ? String(row[nameCol]).trim() : "";
+      const rawSku = row[skuCol] !== undefined ? String(row[skuCol]).trim() : "";
+      const rawName = row[nameCol] !== undefined ? String(row[nameCol]).trim() : "";
 
-      // Skip row if completely empty or just whitespace
       if (!rawSku && !rawName) continue;
 
       const finalSku = (rawSku || `PROD-${r + 1}`).toUpperCase();
       const finalName = rawName || `Article Référence ${finalSku}`;
-      const finalQty = row[qtyCol] !== undefined ? cleanQuantity(row[qtyCol]) : 25;
-      const finalPriceCents = row[priceCol] !== undefined ? cleanPriceToCents(row[priceCol]) : 2900;
+      const finalQty = row[qtyCol] !== undefined && row[qtyCol] !== "" ? cleanQuantity(row[qtyCol]) : 25;
+      const finalPriceCents = row[priceCol] !== undefined && row[priceCol] !== "" ? cleanPriceToCents(row[priceCol]) : 2900;
       const finalCat = row[catCol] ? String(row[catCol]).trim() : "Catalogue Général";
 
       parsedProducts.push({
-        id: `prod-sync-${r + 1}-${Math.random().toString(36).substring(2, 7)}`,
+        id: `prod_sync_${Date.now()}_${r}`,
         sku: finalSku,
         name: finalName,
         quantity_available: finalQty,
@@ -157,12 +226,11 @@ export async function POST(req: NextRequest) {
 
     if (parsedProducts.length === 0) {
       return NextResponse.json(
-        { success: false, error: "Aucun produit n'a pu être extrait du document. Vérifiez le format des colonnes." },
+        { success: false, error: "Aucun produit n'a pu être extrait du document. Vérifiez le format de votre tableau." },
         { status: 400 }
       );
     }
 
-    // Save directly to the products repository
     const saved = await db.setProducts(parsedProducts);
 
     return NextResponse.json({

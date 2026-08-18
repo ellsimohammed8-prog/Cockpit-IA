@@ -146,7 +146,7 @@ export function SettingsModal({
   const [sheetsUrl, setSheetsUrl] = useState("");
   const [autoDeductStock, setAutoDeductStock] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+  const [syncFeedback, setSyncFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
   // Saved Settings State
@@ -617,7 +617,10 @@ export function SettingsModal({
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) {
-          setSyncFeedback(language === "en" ? "File does not contain any valid worksheet." : "Le fichier ne contient aucune feuille de calcul valide.");
+          setSyncFeedback({
+            success: false,
+            message: language === "en" ? "File does not contain any valid worksheet." : "Le fichier ne contient aucune feuille de calcul valide.",
+          });
           return;
         }
 
@@ -627,7 +630,10 @@ export function SettingsModal({
         });
 
         if (!rawData || rawData.length === 0) {
-          setSyncFeedback(language === "en" ? "File is empty." : "Le fichier est vide.");
+          setSyncFeedback({
+            success: false,
+            message: language === "en" ? "File is empty." : "Le fichier est vide.",
+          });
           return;
         }
 
@@ -705,17 +711,27 @@ export function SettingsModal({
             body: JSON.stringify({ products: parsedProducts }),
           });
 
-          if (res.ok) {
-            onProductsUpdated(parsedProducts);
-            setSyncFeedback(
-              language === "en"
-                ? `✓ ${parsedProducts.length} product(s) imported from ${file.name}`
-                : `✓ ${parsedProducts.length} produit(s) importé(s) avec succès depuis ${file.name}`
-            );
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.success) {
+            onProductsUpdated(data.products || parsedProducts);
+            setSyncFeedback({
+              success: true,
+              message: language === "en"
+                ? `✓ ${data.products?.length || parsedProducts.length} product(s) imported from ${file.name}`
+                : `✓ ${data.products?.length || parsedProducts.length} produit(s) importé(s) depuis ${file.name}`,
+            });
+          } else {
+            setSyncFeedback({
+              success: false,
+              message: data.error || data.message || (language === "en" ? "Error importing products from file." : "Erreur lors de l'importation du fichier."),
+            });
           }
         }
       } catch (err: any) {
-        setSyncFeedback(language === "en" ? "Error reading file." : "Erreur lors de la lecture du fichier.");
+        setSyncFeedback({
+          success: false,
+          message: language === "en" ? "Error reading file." : "Erreur lors de la lecture du fichier.",
+        });
       }
     };
 
@@ -731,22 +747,29 @@ export function SettingsModal({
       const res = await fetch("/api/sync-catalog", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sheetsUrl: sheetsUrl.trim() }),
+        body: JSON.stringify({ sheetsUrl: sheetsUrl.trim(), url: sheetsUrl.trim() }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
         onProductsUpdated(data.products || []);
-        setSyncFeedback(
-          language === "en"
+        setSyncFeedback({
+          success: true,
+          message: language === "en"
             ? `✓ ${data.products?.length || 0} products synchronized from Sheets!`
-            : `✓ ${data.products?.length || 0} références synchronisées depuis Google Sheets !`
-        );
+            : `✓ ${data.products?.length || 0} références synchronisées depuis Google Sheets !`,
+        });
       } else {
-        setSyncFeedback(data.message || (language === "en" ? "Error synchronizing with Google Sheets." : "Erreur lors de la synchronisation avec Google Sheets."));
+        setSyncFeedback({
+          success: false,
+          message: data.error || data.message || (language === "en" ? "Error synchronizing with Google Sheets. Please ensure the link is public (Anyone with the link can view)." : "Erreur lors de la synchronisation. Vérifiez que le lien est public ('Tous les utilisateurs disposant du lien')."),
+        });
       }
     } catch (err: any) {
-      setSyncFeedback(language === "en" ? "Network error during Sheets sync." : "Erreur réseau lors de la synchronisation.");
+      setSyncFeedback({
+        success: false,
+        message: language === "en" ? "Network error during Sheets sync." : "Erreur réseau lors de la synchronisation.",
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -1766,9 +1789,19 @@ export function SettingsModal({
               </div>
 
               {syncFeedback && (
-                <div className="p-3 rounded-lg bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{syncFeedback}</span>
+                <div
+                  className={`p-3 rounded-lg border flex items-center gap-2 text-xs animate-fade-in ${
+                    syncFeedback.success
+                      ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-300"
+                      : "bg-rose-950/60 border-rose-500/40 text-rose-300"
+                  }`}
+                >
+                  {syncFeedback.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  )}
+                  <span>{syncFeedback.message}</span>
                 </div>
               )}
 
