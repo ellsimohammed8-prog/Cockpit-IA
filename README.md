@@ -86,7 +86,7 @@ Cockpit AI includes an embedded Next.js HTTP server and an automated process lif
 ```bash
 npm run build:desktop
 ```
-The official installer is generated in `dist/Cockpit IA Setup 0.1.6.exe`.
+The official installer is generated in `dist/Cockpit IA Setup 0.1.5.exe`.
 
 ---
 
@@ -161,7 +161,7 @@ Pour lire les demandes de devis reçues par l'employé, Cockpit IA utilise le pr
 ```bash
 npm run build:desktop
 ```
-L'installeur officiel est généré dans `dist/Cockpit IA Setup 0.1.6.exe`.
+L'installeur officiel est généré dans `dist/Cockpit IA Setup 0.1.5.exe`.
 
 ---
 
