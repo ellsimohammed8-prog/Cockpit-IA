@@ -463,16 +463,18 @@ export function SettingsModal({
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
         const count = data.insertedCount || 0;
         setImapFeedback({
           success: true,
-          message: language === "en"
-            ? `✓ Fetch complete: ${count} new request(s) parsed.`
-            : `✓ Relève terminée : ${count} nouvelle(s) demande(s) traitée(s).`,
+          message: data.message || (
+            count > 0
+              ? (language === "en" ? `✓ ${count} new request(s) retrieved and parsed with AI!` : `✓ ${count} nouvelle(s) demande(s) récupérée(s) et analysée(s) par l'IA !`)
+              : (language === "en" ? `✓ Inbox checked (${inboundEmail}): All latest emails are already processed.` : `✓ Boîte ${inboundEmail} vérifiée : Tous les emails récents sont déjà traités.`)
+          ),
         });
-        if (count > 0 && onRequestAdded) {
+        if (onRequestAdded) {
           onRequestAdded();
         }
       } else {

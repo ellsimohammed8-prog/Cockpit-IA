@@ -35,11 +35,13 @@ export async function POST(req: Request) {
       });
     }
 
+    const cleanPass = pass.replace(/\s+/g, "");
+
     const transporter = nodemailer.createTransport({
       host,
       port,
       secure: port === 465,
-      auth: { user, pass },
+      auth: { user, pass: cleanPass },
       tls: {
         rejectUnauthorized: false,
       },
