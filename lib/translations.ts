@@ -189,6 +189,16 @@ export interface TranslationDict {
     aiTesting: string;
     aiTestSuccess: string;
     aiTestError: string;
+    aiSysPromptTitle: string;
+    aiSysPromptDesc: string;
+    aiSysPromptResetBtn: string;
+    aiBaseUrlLabel: string;
+    aiCustomModelLabel: string;
+    aiChooseFromList: string;
+    aiEnterManually: string;
+    aiDetectedModels: string;
+    aiMockActiveMsg: string;
+    aiSimulatedFallbackNotice: string;
     
     // Messaging Tab
     msgTitle: string;
@@ -200,6 +210,8 @@ export interface TranslationDict {
     inboundProviderLabel: string;
     inboundEmailLabel: string;
     inboundAppPassLabel: string;
+    inboundCreateGoogle: string;
+    inboundCreateMicrosoft: string;
     inboundCustomHost: string;
     inboundCustomPort: string;
     inboundGuideTitle: string;
@@ -208,19 +220,25 @@ export interface TranslationDict {
     inboundGuideGmail3: string;
     inboundGuideOutlook1: string;
     inboundGuideOutlook2: string;
+    inboundGuideCustom: string;
     inboundTestBtn: string;
     inboundTesting: string;
     inboundCheckNowBtn: string;
     inboundChecking: string;
+    inboundAutoSyncLabel: string;
     
     outboundCardTitle: string;
     outboundCardBadge: string;
     outboundCardDesc: string;
     outboundModeLabel: string;
     outboundModeTurbo: string;
+    outboundModeTurboDesc: string;
     outboundModeSame: string;
+    outboundModeSameDesc: string;
     outboundModeCustom: string;
+    outboundModeCustomDesc: string;
     outboundTurboNotice: string;
+    outboundSameNotice: string;
     outboundHostLabel: string;
     outboundPortLabel: string;
     outboundUserLabel: string;
@@ -240,20 +258,35 @@ export interface TranslationDict {
     catSubtitle: string;
     catUploadLabel: string;
     catUploadDropzone: string;
+    catUploadHint: string;
+    catBrowseBtn: string;
     catSheetsUrlLabel: string;
     catSheetsSyncBtn: string;
+    catSheetsHint: string;
     catSyncing: string;
     catSyncSuccess: string;
+    catAutoDeductLabel: string;
     
     // Database Tab
     dbTitle: string;
     dbSubtitle: string;
     dbModeLabel: string;
     dbModeLocal: string;
+    dbModeLocalDesc: string;
     dbModeSupabase: string;
+    dbModeSupabaseDesc: string;
     dbModePostgres: string;
+    dbModePostgresDesc: string;
     dbSupabaseUrl: string;
     dbSupabaseKey: string;
+    dbPgHost: string;
+    dbPgPort: string;
+    dbPgDatabase: string;
+    dbPgUser: string;
+    dbPgPassword: string;
+    dbPgUri: string;
+    dbTestBtn: string;
+    dbTesting: string;
     dbResetTitle: string;
     dbResetDesc: string;
     dbResetBtn: string;
@@ -266,6 +299,7 @@ export interface TranslationDict {
     aboutReleaseDate: string;
     aboutLicense: string;
     
+    activeModelBadge: string;
     saveAllBtn: string;
     savedToast: string;
   };
@@ -460,78 +494,111 @@ export const translations: Record<Language, TranslationDict> = {
       
       aiTitle: "Artificial Intelligence Engine",
       aiSubtitle: "Select and configure the LLM provider used to parse requests and generate quotes",
-      aiProviderLabel: "AI Provider",
+      aiProviderLabel: "Select your Artificial Intelligence Provider:",
       aiApiKeyLabel: "API Key",
       aiModelLabel: "Selected Model",
       aiTestBtn: "⚡ Test AI Connection",
       aiTesting: "Testing Connection...",
       aiTestSuccess: "AI Connection Successful! Models loaded.",
       aiTestError: "Connection failed. Please check your API key.",
+      aiSysPromptTitle: "System Prompt & Business Instructions",
+      aiSysPromptDesc: "Customize analysis instructions and AI behavior for quotation extraction.",
+      aiSysPromptResetBtn: "Reset to Default",
+      aiBaseUrlLabel: "API Base URL:",
+      aiCustomModelLabel: "Custom Model Name:",
+      aiChooseFromList: "Choose from list",
+      aiEnterManually: "+ Enter manually",
+      aiDetectedModels: "model(s) detected via API",
+      aiMockActiveMsg: "Demo / Mock Mode Active (No key)",
+      aiSimulatedFallbackNotice: "In the absence of a key, the intelligent simulation engine seamlessly handles all operations.",
       
-      msgTitle: "Professional Email Architecture",
-      msgSubtitle: "Unified Inbound (IMAP) reception and Outbound (SMTP) quote dispatching",
+      msgTitle: "Professional Email Architecture: Intelligent Ingestion & Guaranteed Deliverability",
+      msgSubtitle: "The system operates in 2 clear steps: 1. Inbound IMAP to fetch and analyze customer requests sent to your employee, and 2. Outbound SMTP to dispatch official quotes and invoices directly to inboxes without spam.",
       
       inboundCardTitle: "📥 1. Customer Email Reception & Reading (IMAP)",
-      inboundCardBadge: "Inbound",
-      inboundCardDesc: "Securely connect employee email account to automatically detect and extract incoming customer requests",
-      inboundProviderLabel: "Email Service Provider",
-      inboundEmailLabel: "Employee Email Address",
-      inboundAppPassLabel: "Application Password (16 chars)",
-      inboundCustomHost: "IMAP Host Server",
-      inboundCustomPort: "IMAP Port (SSL)",
-      inboundGuideTitle: "Step-by-step connection guide:",
+      inboundCardBadge: "Inbound IMAP",
+      inboundCardDesc: "Securely connect employee email account (Google Workspace, Gmail, Outlook, or Webmail)",
+      inboundProviderLabel: "Employee Email Box Type:",
+      inboundEmailLabel: "Employee Email Address:",
+      inboundAppPassLabel: "Application Password (16 characters):",
+      inboundCreateGoogle: "Generate on Google ↗",
+      inboundCreateMicrosoft: "Generate on Microsoft ↗",
+      inboundCustomHost: "IMAP Host Server:",
+      inboundCustomPort: "IMAP Port (SSL):",
+      inboundGuideTitle: "Step-by-step connection guide in 3 steps:",
       inboundGuideGmail1: "Enable 2-Step Verification on your Google account.",
-      inboundGuideGmail2: "Generate an App Password named 'Cockpit AI' via: myaccount.google.com/apppasswords",
-      inboundGuideGmail3: "Paste the 16-character password in the field above.",
-      inboundGuideOutlook1: "Create an App Password via: account.live.com/proofs/AppPassword",
-      inboundGuideOutlook2: "Paste your Outlook email and App Password above.",
+      inboundGuideGmail2: "Open the App Passwords page:",
+      inboundGuideGmail3: "Generate an app password named 'Cockpit AI' and paste the 16 letters above.",
+      inboundGuideOutlook1: "Log in to Microsoft security page: account.live.com/proofs/AppPassword",
+      inboundGuideOutlook2: "Generate an app password for 'Cockpit AI' and paste it above.",
+      inboundGuideCustom: "Enter your corporate IMAP server address (e.g. mail.your-company.com:993) and standard credentials.",
       inboundTestBtn: "⚡ Test IMAP Connection",
       inboundTesting: "Connecting to IMAP...",
       inboundCheckNowBtn: "📥 Fetch New Emails Now (AI)",
       inboundChecking: "Fetching & Analyzing...",
+      inboundAutoSyncLabel: "Automatic background sync every minute",
       
       outboundCardTitle: "🚀 2. Quote Dispatch & Customer Responses (SMTP)",
-      outboundCardBadge: "Outbound",
-      outboundCardDesc: "Configure professional SMTP relay to guarantee 100% email deliverability without spam filters",
-      outboundModeLabel: "Sending Method",
-      outboundModeTurbo: "turboSMTP (Recommended for High Deliverability)",
-      outboundModeSame: "1-Click: Use Same Employee Credentials (Gmail / Outlook)",
-      outboundModeCustom: "Custom SMTP Server",
-      outboundTurboNotice: "turboSMTP relay (pro.eu.turbo-smtp.com:465) delivers your commercial quotes directly to client inboxes with high reputation.",
-      outboundHostLabel: "SMTP Host Server",
-      outboundPortLabel: "SMTP Port (SSL/TLS)",
-      outboundUserLabel: "SMTP Username",
-      outboundPassLabel: "SMTP Password / API Key",
-      outboundTestBtn: "⚡ Test SMTP Sending",
+      outboundCardBadge: "Outbound SMTP",
+      outboundCardDesc: "Dispatches validated quotes automatically to customers with guaranteed deliverability",
+      outboundModeLabel: "Quote Dispatching Method:",
+      outboundModeTurbo: "👑 turboSMTP (Recommended)",
+      outboundModeTurboDesc: "Zero Spam & Guaranteed Deliverability for SMEs.",
+      outboundModeSame: "⚡ Same Employee Account",
+      outboundModeSameDesc: "Directly uses the account configured in Step 1.",
+      outboundModeCustom: "🖥️ Dedicated SMTP Server / cPanel",
+      outboundModeCustomDesc: "Advanced setup with custom host and port.",
+      outboundTurboNotice: "turboSMTP relay (pro.eu.turbo-smtp.com:465) delivers your commercial quotes directly to client inboxes with high sender reputation.",
+      outboundSameNotice: "Quotes will be sent using your employee address via the official SMTP server.",
+      outboundHostLabel: "SMTP Host Server:",
+      outboundPortLabel: "SMTP Port (SSL/TLS):",
+      outboundUserLabel: "SMTP Username (Consumer Key):",
+      outboundPassLabel: "SMTP Password (Consumer Secret):",
+      outboundTestBtn: "⚡ Test SMTP Sending (Test Email)",
       outboundTesting: "Sending Test Email...",
       
-      pedagogicalTitle: "💡 Understanding Email Architecture (IMAP vs SMTP)",
+      pedagogicalTitle: "💡 Understanding the Architecture: Why Two Separate Protocols?",
       pedagogicalSubtitle: "Why are there two distinct email settings in Cockpit AI?",
-      pedagogicalImapTitle: "1. Why IMAP for Reading Inbound Emails?",
-      pedagogicalImapDesc: "IMAP (Internet Message Access Protocol) connects directly to the employee's inbox (Gmail, Outlook, Webmail) to read incoming RFQs from clients in real-time.",
-      pedagogicalSmtpTitle: "2. Why SMTP / turboSMTP for Sending Quotes?",
-      pedagogicalSmtpDesc: "SMTP (Simple Mail Transfer Protocol) is strictly an outbound sending protocol. Specialized relays like turboSMTP ensure your formal PDF quotes and emails never land in client spam filters.",
+      pedagogicalImapTitle: "📥 IMAP (Reading & Ingestion):",
+      pedagogicalImapDesc: "Connects directly to the employee's inbox (Gmail, Outlook, Webmail) so AI can read customer emails, extract items, and prepare quotes.",
+      pedagogicalSmtpTitle: "🚀 SMTP / turboSMTP (Dispatching):",
+      pedagogicalSmtpDesc: "Delivers quotes to the customer. Professional relays like turboSMTP ensure your formal PDF quotes and emails never land in client spam folders.",
       
-      catTitle: "Product Catalog Synchronization",
+      catTitle: "Product Catalog & Stock Synchronization",
       catSubtitle: "Import products from Excel spreadsheets (.xlsx, .csv) or live Google Sheets",
-      catUploadLabel: "Excel / CSV File Upload",
-      catUploadDropzone: "Click or drag & drop your catalog spreadsheet (.xlsx, .xls, .csv)",
-      catSheetsUrlLabel: "Live Google Sheets Public URL",
-      catSheetsSyncBtn: "Sync from Google Sheets",
+      catUploadLabel: "1. Import an Excel (.xlsx, .xls) or CSV file:",
+      catUploadDropzone: "Drag and drop your spreadsheet file here, or click to browse",
+      catUploadHint: "Supports .xlsx, .xls, and .csv formats (SKU, Name, Quantity, Price excl. VAT, Category)",
+      catBrowseBtn: "Browse files",
+      catSheetsUrlLabel: "2. Or sync via a public Google Sheets or online Excel / CSV link:",
+      catSheetsSyncBtn: "Sync Catalog",
+      catSheetsHint: "💡 Compatible with public Google Sheets, OneDrive, SharePoint, or hosted .xlsx / .csv files.",
       catSyncing: "Synchronizing...",
       catSyncSuccess: "Catalog synchronized successfully!",
+      catAutoDeductLabel: "Automatically deduct quantities from stock upon order approval",
       
       dbTitle: "Storage & Persistence",
       dbSubtitle: "Configure local storage, Supabase cloud database, or custom PostgreSQL instance",
-      dbModeLabel: "Database Backend",
-      dbModeLocal: "Local SQLite / File Storage (Default)",
-      dbModeSupabase: "Supabase Cloud Database",
-      dbModePostgres: "Custom PostgreSQL",
-      dbSupabaseUrl: "Supabase Project URL",
-      dbSupabaseKey: "Supabase Anon Key",
+      dbModeLabel: "Choose your Data Storage Mode:",
+      dbModeLocal: "1. Local Storage",
+      dbModeLocalDesc: "Zero configuration required. Ideal for local testing and standalone usage.",
+      dbModeSupabase: "2. Supabase Cloud",
+      dbModeSupabaseDesc: "REST API connection via official Supabase SDK.",
+      dbModePostgres: "3. Dedicated PostgreSQL",
+      dbModePostgresDesc: "Direct PostgreSQL pooler connection for enterprise databases.",
+      dbSupabaseUrl: "Supabase Project URL:",
+      dbSupabaseKey: "Supabase Anon Key:",
+      dbPgHost: "PostgreSQL Host:",
+      dbPgPort: "Port:",
+      dbPgDatabase: "Database Name:",
+      dbPgUser: "Username:",
+      dbPgPassword: "Password:",
+      dbPgUri: "PostgreSQL Connection String (URI):",
+      dbTestBtn: "⚡ Test DB Connection",
+      dbTesting: "Testing DB Connection...",
       dbResetTitle: "Reset Demo Data",
       dbResetDesc: "Restore original sample products and customer requests for demonstration purposes.",
-      dbResetBtn: "Reset to Default Demo Data",
+      dbResetBtn: "Reset Local Data (Reset)",
       dbResetConfirm: "Are you sure you want to reset all data to default demo state?",
       
       aboutTitle: "Cockpit AI Desktop",
@@ -540,15 +607,16 @@ export const translations: Record<Language, TranslationDict> = {
       aboutReleaseDate: "Release Date",
       aboutLicense: "License",
       
-      saveAllBtn: "Save All Settings",
-      savedToast: "Settings saved successfully!",
+      activeModelBadge: "Active model:",
+      saveAllBtn: "Save Settings",
+      savedToast: "Saved!",
     },
     simulator: {
-      title: "Inbound Email Simulator",
-      subtitle: "Inject sample customer RFQ emails to test AI parsing, stock matching, and quote generation",
-      selectSample: "Choose a realistic B2B customer email scenario:",
-      simulateBtn: "Process Email with AI",
-      simulating: "Analyzing Email & Building Quote...",
+      title: "Inbound Customer Simulator",
+      subtitle: "Test the AI engine live with 3 realistic B2B scenarios or free-form text.",
+      selectSample: "Choose a scenario:",
+      simulateBtn: "Simulate Inbound & Analyze",
+      simulating: "AI Extraction in progress...",
     },
   },
   fr: {
@@ -732,95 +800,129 @@ export const translations: Record<Language, TranslationDict> = {
       
       aiTitle: "Moteur d'Intelligence Artificielle",
       aiSubtitle: "Sélectionnez le fournisseur d'IA pour analyser les demandes et chiffrer les devis",
-      aiProviderLabel: "Fournisseur d'IA",
-      aiApiKeyLabel: "Clé API",
+      aiProviderLabel: "Sélectionnez votre Fournisseur d'Intelligence Artificielle :",
+      aiApiKeyLabel: "Clé d'API",
       aiModelLabel: "Modèle Sélectionné",
       aiTestBtn: "⚡ Tester la Connexion IA",
       aiTesting: "Test en cours...",
       aiTestSuccess: "Connexion IA réussie ! Modèles chargés.",
       aiTestError: "Échec de la connexion. Vérifiez votre clé API.",
+      aiSysPromptTitle: "Prompt Système & Instructions Métier",
+      aiSysPromptDesc: "Personnalisez les consignes d'analyse et le comportement de l'IA pour l'extraction de vos devis.",
+      aiSysPromptResetBtn: "Rétablir par défaut",
+      aiBaseUrlLabel: "Base URL de l'API :",
+      aiCustomModelLabel: "Modèle Custom :",
+      aiChooseFromList: "Choisir dans la liste",
+      aiEnterManually: "+ Saisir manuellement",
+      aiDetectedModels: "modèle(s) détecté(s) via l'API",
+      aiMockActiveMsg: "Mode Démo / Mock Actif (Sans clé)",
+      aiSimulatedFallbackNotice: "En l'absence de clé, le moteur intelligent de simulation prend le relais de manière fluide.",
       
-      msgTitle: "Architecture de Messagerie Professionnelle",
-      msgSubtitle: "Gestion scindée de la Réception (IMAP) et de l'Envoi de Devis (SMTP)",
+      msgTitle: "Messagerie Professionnelle : Réception Intelligente & Envoi Haute Délivrabilité",
+      msgSubtitle: "Le système fonctionne en 2 étapes claires : 1. Lecture IMAP pour récupérer et analyser les demandes des clients envoyées à votre employé, et 2. Envoi SMTP pour expédier les devis et factures officiels sans passer par les spams.",
       
       inboundCardTitle: "📥 1. Réception & Lecture des Demandes Clients (IMAP)",
-      inboundCardBadge: "Entrant",
-      inboundCardDesc: "Connexion sécurisée à la boîte email de l'employé pour relever et extraire automatiquement les demandes entrantes",
-      inboundProviderLabel: "Fournisseur de Messagerie",
-      inboundEmailLabel: "Adresse Email de l'Employé",
-      inboundAppPassLabel: "Mot de passe d'application (16 caractères)",
-      inboundCustomHost: "Serveur IMAP Hôte",
-      inboundCustomPort: "Port IMAP (SSL)",
-      inboundGuideTitle: "Guide de configuration étape par étape :",
+      inboundCardBadge: "Inbound IMAP",
+      inboundCardDesc: "Connectez la boîte de réception de l'employé (Google Workspace, Gmail, Outlook ou Webmail)",
+      inboundProviderLabel: "Type de Boîte Email de l'Employé :",
+      inboundEmailLabel: "Adresse Email de l'Employé :",
+      inboundAppPassLabel: "Mot de Passe d'Application (16 lettres) :",
+      inboundCreateGoogle: "Créer sur Google ↗",
+      inboundCreateMicrosoft: "Créer sur Microsoft ↗",
+      inboundCustomHost: "Hôte IMAP (Serveur de Réception) :",
+      inboundCustomPort: "Port IMAP (SSL) :",
+      inboundGuideTitle: "Comment activer la lecture du compte en 3 étapes :",
       inboundGuideGmail1: "Activez la validation en 2 étapes sur votre compte Google.",
-      inboundGuideGmail2: "Créez un Mot de passe d'application nommé 'Cockpit IA' sur : myaccount.google.com/apppasswords",
-      inboundGuideGmail3: "Collez les 16 caractères du mot de passe dans le champ ci-dessus.",
-      inboundGuideOutlook1: "Générez un mot de passe d'application sur : account.live.com/proofs/AppPassword",
-      inboundGuideOutlook2: "Collez votre email Outlook et votre mot de passe d'application ci-dessus.",
-      inboundTestBtn: "⚡ Tester la Connexion IMAP",
-      inboundTesting: "Connexion IMAP en cours...",
-      inboundCheckNowBtn: "📥 Relever les emails maintenant (IA)",
-      inboundChecking: "Relève & Analyse IA en cours...",
+      inboundGuideGmail2: "Ouvrez directement la page :",
+      inboundGuideGmail3: "Créez un mot de passe nommé « Cockpit IA » et collez les 16 lettres ci-dessus.",
+      inboundGuideOutlook1: "Connectez-vous à la page de sécurité Microsoft : account.live.com/proofs/AppPassword",
+      inboundGuideOutlook2: "Générez un mot de passe d'application pour « Cockpit IA » et collez-le ci-dessus.",
+      inboundGuideCustom: "Renseignez l'adresse de votre serveur IMAP d'entreprise (ex: mail.votre-entreprise.fr:993) et vos identifiants habituels.",
+      inboundTestBtn: "⚡ Tester IMAP",
+      inboundTesting: "Test IMAP...",
+      inboundCheckNowBtn: "📥 Relever les emails (IA)",
+      inboundChecking: "Relève en cours...",
+      inboundAutoSyncLabel: "Relève automatique toutes les minutes",
       
       outboundCardTitle: "🚀 2. Envoi des Devis & Réponses aux Clients (SMTP)",
-      outboundCardBadge: "Sortant",
-      outboundCardDesc: "Configuration du serveur SMTP pour garantir 100% de délivrabilité sans passer par les spams",
-      outboundModeLabel: "Méthode d'Envoi",
-      outboundModeTurbo: "turboSMTP (Recommandé pour Délivrabilité Maximale)",
-      outboundModeSame: "1 Clic : Utiliser le même compte employé (Gmail / Outlook)",
-      outboundModeCustom: "Serveur SMTP Personnalisé",
+      outboundCardBadge: "Outbound SMTP",
+      outboundCardDesc: "Expédie les devis validés automatiquement aux clients avec haute délivrabilité",
+      outboundModeLabel: "Méthode d'Expédition des Devis :",
+      outboundModeTurbo: "👑 turboSMTP (Recommandé)",
+      outboundModeTurboDesc: "Zéro Spam & Délivrabilité garantie pour PME.",
+      outboundModeSame: "⚡ Même compte",
+      outboundModeSameDesc: "Utilise directement le compte configuré à l'étape 1.",
+      outboundModeCustom: "🖥️ Serveur SMTP Dédié / cPanel",
+      outboundModeCustomDesc: "Configuration avancée avec hôte et port personnalisés.",
       outboundTurboNotice: "Le relais turboSMTP (pro.eu.turbo-smtp.com:465) achemine vos devis directement dans la boîte de réception des clients sans risque de blocage anti-spam.",
-      outboundHostLabel: "Serveur SMTP Hôte",
-      outboundPortLabel: "Port SMTP (SSL/TLS)",
-      outboundUserLabel: "Nom d'utilisateur SMTP",
-      outboundPassLabel: "Mot de passe SMTP / Clé API",
-      outboundTestBtn: "⚡ Tester l'Envoi SMTP",
-      outboundTesting: "Envoi d'un email de test...",
+      outboundSameNotice: "Les devis seront expédiés avec l'adresse de votre employé via le serveur SMTP officiel.",
+      outboundHostLabel: "Hôte SMTP :",
+      outboundPortLabel: "Port SMTP :",
+      outboundUserLabel: "Identifiant SMTP (Consumer Key) :",
+      outboundPassLabel: "Mot de Passe SMTP (Consumer Secret) :",
+      outboundTestBtn: "⚡ Tester l'Envoi SMTP (Email de test)",
+      outboundTesting: "Envoi du test SMTP...",
       
-      pedagogicalTitle: "💡 Comprendre la Messagerie (IMAP vs SMTP)",
+      pedagogicalTitle: "💡 Comprendre l'Architecture : Pourquoi Deux Protocoles ?",
       pedagogicalSubtitle: "Pourquoi deux réglages distincts dans Cockpit IA ?",
-      pedagogicalImapTitle: "1. Pourquoi IMAP pour lire les emails entrants ?",
-      pedagogicalImapDesc: "IMAP (Internet Message Access Protocol) se connecte directement à la boîte de réception de l'employé pour relever les demandes clients en temps réel.",
-      pedagogicalSmtpTitle: "2. Pourquoi SMTP / turboSMTP pour envoyer les devis ?",
-      pedagogicalSmtpDesc: "SMTP (Simple Mail Transfer Protocol) est dédié uniquement à l'expédition. Des relais certifiés comme turboSMTP évitent tout classement en spam de vos devis officiels.",
+      pedagogicalImapTitle: "📥 IMAP (Lecture & Réception) :",
+      pedagogicalImapDesc: "Sert à ouvrir la boîte de réception de l'employé pour que l'IA puisse lire les emails des clients, extraire les articles demandés et préparer les devis.",
+      pedagogicalSmtpTitle: "🚀 SMTP / turboSMTP (Expédition) :",
+      pedagogicalSmtpDesc: "Sert à déposer les devis chez le client. Des services comme turboSMTP garantissent que le devis arrive directement dans la boîte de réception du client sans passer par les spams.",
       
       catTitle: "Synchronisation du Catalogue Produits",
       catSubtitle: "Importez vos produits depuis un fichier Excel (.xlsx, .csv) ou Google Sheets en direct",
-      catUploadLabel: "Import Fichier Excel / CSV",
-      catUploadDropzone: "Cliquez ou glissez-déposez votre catalogue (.xlsx, .xls, .csv)",
-      catSheetsUrlLabel: "URL Publique Google Sheets",
-      catSheetsSyncBtn: "Synchroniser depuis Google Sheets",
+      catUploadLabel: "1. Importer un fichier Excel (.xlsx, .xls) ou CSV :",
+      catUploadDropzone: "Glissez-déposez votre fichier ici, ou cliquez pour parcourir",
+      catUploadHint: "Prend en charge les formats .xlsx, .xls et .csv (SKU, Nom, Quantité, Prix HT, Catégorie)",
+      catBrowseBtn: "Parcourir les fichiers",
+      catSheetsUrlLabel: "2. Ou synchroniser via un lien Google Sheets ou fichier Excel / CSV en ligne :",
+      catSheetsSyncBtn: "Synchroniser le Catalogue",
+      catSheetsHint: "💡 Compatible avec les liens publics Google Sheets, OneDrive, SharePoint ou fichiers .xlsx / .csv hébergés.",
       catSyncing: "Synchronisation...",
       catSyncSuccess: "Catalogue synchronisé avec succès !",
+      catAutoDeductLabel: "Déduire automatiquement les quantités du stock lors de l'approbation d'une commande",
       
       dbTitle: "Stockage & Persistance des Données",
-      dbSubtitle: "Gestion du stockage local, Supabase Cloud ou instance PostgreSQL dédiée",
-      dbModeLabel: "Mode de Base de Données",
-      dbModeLocal: "Stockage Local SQLite / Fichier (Par défaut)",
-      dbModeSupabase: "Base de Données Supabase Cloud",
-      dbModePostgres: "PostgreSQL Personnalisé",
-      dbSupabaseUrl: "URL du Projet Supabase",
-      dbSupabaseKey: "Clé Anon Supabase",
-      dbResetTitle: "Réinitialisation des Données",
-      dbResetDesc: "Restaurer les articles de démonstration et les demandes d'exemples initiales.",
-      dbResetBtn: "Restaurer les Données de Démo",
-      dbResetConfirm: "Êtes-vous sûr de vouloir réinitialiser toutes les données ?",
+      dbSubtitle: "Choisissez votre Mode de Stockage des Données :",
+      dbModeLabel: "Choisissez votre Mode de Stockage des Données :",
+      dbModeLocal: "1. Stockage Local",
+      dbModeLocalDesc: "Zéro configuration requise. Idéal pour tester immédiatement en local.",
+      dbModeSupabase: "2. Supabase Cloud",
+      dbModeSupabaseDesc: "Connexion API REST via SDK Supabase officiel.",
+      dbModePostgres: "3. PostgreSQL Dédié",
+      dbModePostgresDesc: "Connexion directe par pooler pour bases de données entreprise.",
+      dbSupabaseUrl: "URL du Projet Supabase :",
+      dbSupabaseKey: "Clé Publique / Anon Key :",
+      dbPgHost: "Hôte PostgreSQL :",
+      dbPgPort: "Port :",
+      dbPgDatabase: "Base de Données :",
+      dbPgUser: "Utilisateur (User) :",
+      dbPgPassword: "Mot de Passe :",
+      dbPgUri: "Chaîne de Connexion PostgreSQL (Connection URI) :",
+      dbTestBtn: "⚡ Tester la connexion BDD",
+      dbTesting: "Test de connexion en cours...",
+      dbResetTitle: "Réinitialiser les données locales",
+      dbResetDesc: "Rétablit les articles de démonstration et les demandes d'exemple.",
+      dbResetBtn: "Réinitialiser les données locales (Reset)",
+      dbResetConfirm: "Êtes-vous sûr de vouloir réinitialiser la base de données ?",
       
       aboutTitle: "Cockpit IA Bureau",
-      aboutDesc: "Plateforme d'automatisation commerciale et de réconciliation de stock pour distributeurs et PME.",
+      aboutDesc: "Plateforme d'automatisation commerciale et réconciliation de stock pour PME et distributeurs.",
       aboutVersion: "Version",
       aboutReleaseDate: "Date de Sortie",
       aboutLicense: "Licence",
       
-      saveAllBtn: "Enregistrer tous les Paramètres",
-      savedToast: "Paramètres enregistrés avec succès !",
+      activeModelBadge: "Modèle actif :",
+      saveAllBtn: "Enregistrer la configuration",
+      savedToast: "Enregistré !",
     },
     simulator: {
-      title: "Simulateur d'Email Entrant",
-      subtitle: "Injectez des exemples d'emails clients pour tester l'analyse IA et le chiffrage",
-      selectSample: "Sélectionnez un scénario réaliste :",
-      simulateBtn: "Traiter l'Email avec l'IA",
-      simulating: "Analyse IA & Chiffrage...",
+      title: "Simulateur d'Entrée Client (Inbound Ingestion)",
+      subtitle: "Testez la robustesse du moteur IA en direct avec les 3 cas d'usage ou un message libre.",
+      selectSample: "Sélectionnez un scénario :",
+      simulateBtn: "Simuler la Réception & Analyser",
+      simulating: "Extraction IA en cours...",
     },
   },
 };

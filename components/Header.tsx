@@ -58,7 +58,7 @@ export function Header({ isLoading, onRefresh, onOpenSettings }: HeaderProps) {
             <span>{t.header.systemStatus}</span>
           </div>
 
-          {/* Top-Right Language Switcher (EN / FR) */}
+          {/* Top-Right Language Switcher (English / Français) */}
           <div
             className="flex items-center p-0.5 rounded-lg bg-[#111318] border border-white/[0.08] shadow-inner"
             title={t.header.langTitle}
@@ -66,26 +66,24 @@ export function Header({ isLoading, onRefresh, onOpenSettings }: HeaderProps) {
             <button
               type="button"
               onClick={() => setLanguage("en")}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                 language === "en"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? "bg-blue-600 text-white shadow-sm font-bold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
               }`}
             >
-              <span>🇬🇧</span>
-              <span>EN</span>
+              English
             </button>
             <button
               type="button"
               onClick={() => setLanguage("fr")}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                 language === "fr"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? "bg-blue-600 text-white shadow-sm font-bold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
               }`}
             >
-              <span>🇫🇷</span>
-              <span>FR</span>
+              Français
             </button>
           </div>
 

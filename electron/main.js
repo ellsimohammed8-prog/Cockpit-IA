@@ -246,12 +246,12 @@ function getLoadingHTML() {
       </svg>
     </div>
     <div class="title">Cockpit IA</div>
-    <div class="subtitle">Gestion Commerciale & Automatisation des Ventes</div>
+    <div class="subtitle">Commercial Automation & Inventory Management</div>
     <div class="spinner-ring"></div>
-    <div class="status-text" id="statusMsg">Chargement du moteur commercial et des styles...</div>
+    <div class="status-text" id="statusMsg">Loading commercial engine and interface styles...</div>
     <div class="steps">
-      <div class="step-item"><span class="dot"></span> Démarrage du serveur embarqué ultra-rapide</div>
-      <div class="step-item"><span class="dot"></span> Initialisation des connecteurs IA & Catalogue</div>
+      <div class="step-item"><span class="dot"></span> Starting ultra-fast embedded server</div>
+      <div class="step-item"><span class="dot"></span> Initializing AI Connectors & Catalog</div>
     </div>
   </div>
 </body>
