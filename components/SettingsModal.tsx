@@ -37,6 +37,7 @@ import {
   detectProviderFromKey,
   DEFAULT_SYSTEM_PROMPT,
 } from "@/lib/ai";
+import { useLanguage } from "@/lib/languageContext";
 
 const PROVIDER_NAMES: Record<string, string> = {
   claude: "Anthropic (Claude)",
@@ -66,6 +67,7 @@ export function SettingsModal({
   onResetDatabase,
   onRequestAdded,
 }: SettingsModalProps) {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<"ai" | "email" | "sheets" | "database">("ai");
 
   // Multi-LLM Provider & Dynamic Models State
@@ -846,10 +848,10 @@ export function SettingsModal({
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                Paramètres & Connecteurs
+                {t.settings.title}
               </h2>
               <p className="text-xs text-slate-400 font-normal">
-                Configuration des modèles IA, boîte email professionnelle (lecture & envoi), catalogue et base de données
+                {t.settings.subtitle}
               </p>
             </div>
           </div>
@@ -873,7 +875,7 @@ export function SettingsModal({
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>🧠 Moteur IA & Prompts</span>
+            <span>🧠 {t.settings.tabAi}</span>
           </button>
 
           <button
@@ -885,7 +887,7 @@ export function SettingsModal({
             }`}
           >
             <Mail className="w-3.5 h-3.5" />
-            <span>📬 Messagerie Pro (In/Out)</span>
+            <span>📬 {t.settings.tabMessaging}</span>
           </button>
 
           <button
@@ -897,7 +899,7 @@ export function SettingsModal({
             }`}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>📊 Catalogue & Fichiers</span>
+            <span>📊 {t.settings.tabCatalog}</span>
           </button>
 
           <button
@@ -909,7 +911,7 @@ export function SettingsModal({
             }`}
           >
             <Database className="w-3.5 h-3.5" />
-            <span>🗄️ Base de Données</span>
+            <span>🗄️ {t.settings.tabDatabase}</span>
           </button>
         </div>
 
@@ -2148,12 +2150,12 @@ export function SettingsModal({
               {isSavedRecently ? (
                 <>
                   <Check className="w-3.5 h-3.5" />
-                  <span>✓ Enregistré !</span>
+                  <span>✓ {t.settings.savedToast}</span>
                 </>
               ) : (
                 <>
                   <Save className="w-3.5 h-3.5" />
-                  <span>Enregistrer la configuration</span>
+                  <span>{t.settings.saveAllBtn}</span>
                 </>
               )}
             </button>
@@ -2162,7 +2164,7 @@ export function SettingsModal({
               onClick={onClose}
               className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition-colors cursor-pointer text-xs"
             >
-              Fermer
+              {t.common.close}
             </button>
           </div>
         </div>

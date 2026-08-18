@@ -3,12 +3,14 @@
 import React, { useState } from "react";
 import { DEMO_TEST_SCENARIOS } from "@/lib/seed-data";
 import { Send, Sparkles, AlertTriangle, ShieldCheck, CheckCircle2, RefreshCw } from "lucide-react";
+import { useLanguage } from "@/lib/languageContext";
 
 interface InboundSimulatorProps {
   onRequestProcessed: () => void;
 }
 
 export function InboundSimulator({ onRequestProcessed }: InboundSimulatorProps) {
+  const { t, language } = useLanguage();
   const [selectedText, setSelectedText] = useState(DEMO_TEST_SCENARIOS[0].text);
   const [activeScenarioId, setActiveScenarioId] = useState<string>("clean");
   const [isLoading, setIsLoading] = useState(false);
@@ -60,10 +62,10 @@ export function InboundSimulator({ onRequestProcessed }: InboundSimulatorProps) 
         <div>
           <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-blue-400" />
-            Simulateur d'Entrée Client (Inbound Ingestion)
+            {t.simulator.title}
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Testez la robustesse du moteur IA en direct avec les 3 cas d'usage ou un message libre.
+            {t.simulator.subtitle}
           </p>
         </div>
 
@@ -75,7 +77,7 @@ export function InboundSimulator({ onRequestProcessed }: InboundSimulatorProps) 
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
             )}
             <span>
-              Moteur : <strong className="text-white">{lastResult.provider}</strong>
+              Engine: <strong className="text-white">{lastResult.provider}</strong>
             </span>
           </div>
         )}
@@ -89,7 +91,7 @@ export function InboundSimulator({ onRequestProcessed }: InboundSimulatorProps) 
             <button
               key={scenario.id}
               onClick={() => handleSelectScenario(scenario)}
-              className={`text-left p-3 rounded-lg border transition-all ${
+              className={`text-left p-3 rounded-lg border transition-all cursor-pointer ${
                 isActive
                   ? "bg-blue-950/40 border-blue-500/50 shadow-sm shadow-blue-500/10"
                   : "bg-slate-900/50 border-slate-800 hover:border-slate-700 text-slate-400"
@@ -111,7 +113,7 @@ export function InboundSimulator({ onRequestProcessed }: InboundSimulatorProps) 
       {/* Message Textarea */}
       <div className="space-y-3">
         <label className="block text-xs font-medium text-slate-300">
-          Message brut reçu (Inbound Text) :
+          {t.drawer.sectionOriginalEmail} :
         </label>
         <textarea
           value={selectedText}
@@ -120,14 +122,14 @@ export function InboundSimulator({ onRequestProcessed }: InboundSimulatorProps) 
             setActiveScenarioId("custom");
           }}
           rows={4}
-          placeholder="Collez ici le texte d'un email client ou une demande..."
+          placeholder="Paste customer RFQ email text here..."
           className="w-full bg-slate-950/70 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono transition-colors"
         />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Sécurisé contre les injections de prompt & vérifié par Zod Schema.</span>
+            <span>Zod Schema validation & Prompt-injection shielded.</span>
           </div>
 
           <button
@@ -138,12 +140,12 @@ export function InboundSimulator({ onRequestProcessed }: InboundSimulatorProps) 
             {isLoading ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Extraction IA en cours...</span>
+                <span>{t.simulator.simulating}</span>
               </>
             ) : (
               <>
                 <Send className="w-3.5 h-3.5" />
-                <span>Simuler la Réception & Analyser</span>
+                <span>{t.simulator.simulateBtn}</span>
               </>
             )}
           </button>

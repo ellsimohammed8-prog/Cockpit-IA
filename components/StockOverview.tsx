@@ -2,24 +2,27 @@
 
 import React from "react";
 import { ProductStockRecord } from "@/lib/schema";
-import { Package, ShieldAlert, Layers } from "lucide-react";
+import { Package, Layers } from "lucide-react";
+import { useLanguage } from "@/lib/languageContext";
 
 interface StockOverviewProps {
   products: ProductStockRecord[];
 }
 
 export function StockOverview({ products }: StockOverviewProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="bg-[#111827]/80 backdrop-blur border border-slate-800 rounded-xl p-5 shadow-xl">
       <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-indigo-400" />
           <h3 className="text-sm font-semibold text-slate-200">
-            Catalogue Produits & Stock (Réconciliation)
+            {t.catalog.title}
           </h3>
         </div>
         <span className="text-xs text-slate-400">
-          {products.length} références pré-chargées
+          {products.length} {t.catalog.countSuffix}
         </span>
       </div>
 
@@ -53,7 +56,7 @@ export function StockOverview({ products }: StockOverviewProps) {
                   }`}
                 >
                   <Package className="w-3 h-3" />
-                  {prod.quantity_available} en stock
+                  {prod.quantity_available} {t.common.stock}
                 </span>
               </div>
             </div>

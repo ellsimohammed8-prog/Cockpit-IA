@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { RefreshCw, Settings } from "lucide-react";
+import { RefreshCw, Settings, Globe } from "lucide-react";
+import { useLanguage } from "@/lib/languageContext";
 
 interface HeaderProps {
   isLoading: boolean;
@@ -10,6 +11,8 @@ interface HeaderProps {
 }
 
 export function Header({ isLoading, onRefresh, onOpenSettings }: HeaderProps) {
+  const { language, setLanguage, t } = useLanguage();
+
   return (
     <header className="sticky top-0 z-30 bg-[#08090C]/90 backdrop-blur-md border-b border-white/[0.07] px-4 sm:px-8 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -32,33 +35,64 @@ export function Header({ isLoading, onRefresh, onOpenSettings }: HeaderProps) {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-semibold text-white tracking-tight">
-                Cockpit IA
+                {t.header.appName}
               </h1>
               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                BETA
+                {t.header.appBeta}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 hidden sm:block">
-              Traitement commercial & synchronisation des stocks
+              {t.header.tagline}
             </p>
           </div>
         </div>
 
         {/* Live Status Indicator & Action Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
           {/* Animated Green Status Indicator */}
-          <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[11px] text-slate-300 font-medium">
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[11px] text-slate-300 font-medium">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span>Système IA Opérationnel</span>
+            <span>{t.header.systemStatus}</span>
+          </div>
+
+          {/* Top-Right Language Switcher (EN / FR) */}
+          <div
+            className="flex items-center p-0.5 rounded-lg bg-[#111318] border border-white/[0.08] shadow-inner"
+            title={t.header.langTitle}
+          >
+            <button
+              type="button"
+              onClick={() => setLanguage("en")}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                language === "en"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+              }`}
+            >
+              <span>🇬🇧</span>
+              <span>EN</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage("fr")}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                language === "fr"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+              }`}
+            >
+              <span>🇫🇷</span>
+              <span>FR</span>
+            </button>
           </div>
 
           {/* Refresh Button */}
           <button
             onClick={onRefresh}
-            title="Rafraîchir les données"
+            title={t.header.refreshTooltip}
             className="p-1.5 rounded-lg bg-[#111318] hover:bg-white/[0.06] text-slate-300 border border-white/[0.08] transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-blue-400" : ""}`} />
@@ -67,11 +101,11 @@ export function Header({ isLoading, onRefresh, onOpenSettings }: HeaderProps) {
           {/* Settings Button */}
           <button
             onClick={onOpenSettings}
-            title="Paramètres et connecteurs"
+            title={t.header.settingsTooltip}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-600 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             <Settings className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Paramètres</span>
+            <span className="hidden sm:inline">{t.header.settingsBtn}</span>
           </button>
         </div>
       </div>

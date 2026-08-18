@@ -13,6 +13,7 @@ import {
   Tag,
   Hash,
 } from "lucide-react";
+import { useLanguage } from "@/lib/languageContext";
 
 interface ProductCatalogProps {
   products: ProductStockRecord[];
@@ -20,6 +21,7 @@ interface ProductCatalogProps {
 }
 
 export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogProps) {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
@@ -79,7 +81,7 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
       if (res.ok) {
         const data = await res.json();
         onProductsUpdated(data.products);
-        showToast(`Produit "${newProduct.name}" ajouté avec succès.`);
+        showToast(t.catalog.productAddedSuccess);
         setIsAddModalOpen(false);
         setNewProduct({
           name: "",
@@ -107,7 +109,7 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
       if (res.ok) {
         const data = await res.json();
         onProductsUpdated(data.products);
-        showToast("Article supprimé du catalogue.");
+        showToast(t.catalog.productDeletedSuccess);
       }
     } catch (err) {
       console.error("Erreur suppression produit:", err);
@@ -126,7 +128,7 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
         const data = await res.json();
         onProductsUpdated(data.products || []);
         setIsClearConfirmOpen(false);
-        showToast("Le catalogue a été entièrement vidé.");
+        showToast(t.catalog.title + ": " + t.common.none);
       }
     } catch (err) {
       console.error("Erreur vidage catalogue:", err);
@@ -143,13 +145,13 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              Catalogue Produits & Stock
+              {t.catalog.title}
               <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-white/[0.06] text-slate-300 border border-white/[0.08]">
-                {products.length} réf.
+                {products.length} {t.catalog.countSuffix}
               </span>
             </h3>
             <p className="text-[11px] text-slate-400 font-normal mt-0.5">
-              Gestion des stocks, prix unitaires et réconciliation automatique des devis
+              {t.catalog.subtitle}
             </p>
           </div>
         </div>
@@ -166,7 +168,7 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
               autoComplete="off"
               autoCorrect="off"
               spellCheck="false"
-              placeholder="Rechercher un article, SKU, catégorie..."
+              placeholder={t.catalog.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-9 bg-black/40 border border-white/[0.08] rounded-lg pl-9 pr-8 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
@@ -181,14 +183,14 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
             className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Ajouter un produit</span>
+            <span>{t.catalog.addProductBtn}</span>
           </button>
 
           {products.length > 0 && (
             <button
               onClick={() => setIsClearConfirmOpen(true)}
               className="h-9 px-2.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 border border-white/[0.07] transition-colors cursor-pointer"
-              title="Vider le catalogue"
+              title={t.catalog.clearAllBtn}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -208,12 +210,12 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-black/30 border-b border-white/[0.06] text-slate-400 font-medium uppercase tracking-wider text-[10px]">
-              <th className="py-3 px-5">SKU / Réf.</th>
-              <th className="py-3 px-5">Désignation</th>
-              <th className="py-3 px-5">Catégorie</th>
-              <th className="py-3 px-5">Prix Unitaire</th>
-              <th className="py-3 px-5">Stock Disponible</th>
-              <th className="py-3 px-5 text-right">Actions</th>
+              <th className="py-3 px-5">{t.catalog.colSku}</th>
+              <th className="py-3 px-5">{t.catalog.colName}</th>
+              <th className="py-3 px-5">{t.catalog.colCategory}</th>
+              <th className="py-3 px-5">{t.catalog.colUnitPrice}</th>
+              <th className="py-3 px-5">{t.catalog.colStock}</th>
+              <th className="py-3 px-5 text-right">{t.catalog.colActions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
@@ -221,8 +223,8 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
               <tr>
                 <td colSpan={6} className="py-8 text-center text-slate-500 text-xs">
                   {products.length === 0
-                    ? "Aucun produit dans le catalogue. Cliquez sur 'Ajouter un produit' ou importez un fichier Excel dans les Paramètres."
-                    : "Aucun article ne correspond à votre recherche."}
+                    ? t.catalog.emptyDesc
+                    : t.catalog.emptyTitle}
                 </td>
               </tr>
             ) : (
@@ -242,7 +244,7 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
 
                     <td className="py-3.5 px-5">
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/[0.04] text-slate-300 border border-white/[0.08]">
-                        {product.category || "Général"}
+                        {product.category || "General"}
                       </span>
                     </td>
 
@@ -270,7 +272,7 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
                               : "text-slate-300"
                           }`}
                         >
-                          {product.quantity_available} en stock
+                          {product.quantity_available} {isOutOfStock ? `(${t.badges.outOfStock})` : isLowStock ? `(${t.badges.lowStock})` : ""}
                         </span>
                       </div>
                     </td>
@@ -278,8 +280,8 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
                     <td className="py-3.5 px-5 text-right">
                       <button
                         onClick={() => handleDeleteProduct(product.id)}
-                        className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-950/20 rounded transition-colors"
-                        title="Supprimer cet article"
+                        className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-950/20 rounded transition-colors cursor-pointer"
+                        title={t.common.delete}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -299,7 +301,7 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
             <div className="bg-black/30 border-b border-white/[0.07] px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Plus className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-semibold text-white">Ajouter un Nouvel Article</h3>
+                <h3 className="text-sm font-semibold text-white">{t.catalog.modalTitle}</h3>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
@@ -312,7 +314,7 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
             <form onSubmit={handleAddProduct} className="p-5 space-y-4 text-xs">
               <div>
                 <label className="block text-slate-300 font-medium mb-1">
-                  Désignation du Produit *
+                  {t.catalog.formName} *
                 </label>
                 <input
                   type="text"
@@ -328,13 +330,13 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
                 <div>
                   <label className="block text-slate-300 font-medium mb-1 flex items-center gap-1">
                     <Hash className="w-3 h-3 text-slate-400" />
-                    SKU / Référence
+                    {t.catalog.formSku}
                   </label>
                   <input
                     type="text"
                     value={newProduct.sku}
                     onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
-                    placeholder="Auto-généré si vide"
+                    placeholder="Auto-generated"
                     className="w-full h-9 bg-black/40 border border-white/[0.08] rounded-lg px-3 font-mono text-slate-200 focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -342,13 +344,13 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
                 <div>
                   <label className="block text-slate-300 font-medium mb-1 flex items-center gap-1">
                     <Tag className="w-3 h-3 text-slate-400" />
-                    Catégorie
+                    {t.catalog.formCategory}
                   </label>
                   <input
                     type="text"
                     value={newProduct.category}
                     onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                    placeholder="Ex: Outillage, EPI"
+                    placeholder="Tools, Hardware..."
                     className="w-full h-9 bg-black/40 border border-white/[0.08] rounded-lg px-3 text-slate-200 focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -357,21 +359,21 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">
-                    Prix Unitaire (€ HT) *
+                    {t.catalog.formPrice} *
                   </label>
                   <input
                     type="text"
                     required
                     value={newProduct.unit_price}
                     onChange={(e) => setNewProduct({ ...newProduct, unit_price: e.target.value })}
-                    placeholder="Ex: 49.90"
+                    placeholder="49.90"
                     className="w-full h-9 bg-black/40 border border-white/[0.08] rounded-lg px-3 font-mono text-slate-200 focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">
-                    Quantité Initiale en Stock
+                    {t.catalog.formStock}
                   </label>
                   <input
                     type="number"
@@ -387,16 +389,16 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] text-slate-300 font-medium"
+                  className="px-4 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] text-slate-300 font-medium cursor-pointer"
                 >
-                  Annuler
+                  {t.common.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold shadow-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold shadow-sm disabled:opacity-50 cursor-pointer"
                 >
-                  {isSubmitting ? "Enregistrement..." : "Ajouter au Catalogue"}
+                  {isSubmitting ? t.common.loading : t.catalog.formSubmitBtn}
                 </button>
               </div>
             </form>
@@ -410,23 +412,23 @@ export function ProductCatalog({ products, onProductsUpdated }: ProductCatalogPr
           <div className="w-full max-w-sm bg-[#111318] border border-white/[0.08] rounded-xl p-5 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-rose-400">
               <AlertTriangle className="w-5 h-5" />
-              <h3 className="text-sm font-semibold text-white">Vider le catalogue</h3>
+              <h3 className="text-sm font-semibold text-white">{t.catalog.clearAllConfirmTitle}</h3>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Êtes-vous sûr de vouloir supprimer tous les articles du catalogue ? Cette action est irréversible.
+              {t.catalog.clearAllConfirmDesc}
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setIsClearConfirmOpen(false)}
-                className="px-3.5 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] text-slate-300 text-xs font-medium"
+                className="px-3.5 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] text-slate-300 text-xs font-medium cursor-pointer"
               >
-                Annuler
+                {t.common.cancel}
               </button>
               <button
                 onClick={handleClearAll}
-                className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-sm"
+                className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-sm cursor-pointer"
               >
-                Confirmer le Vidage
+                {t.common.confirm}
               </button>
             </div>
           </div>

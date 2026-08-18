@@ -100,7 +100,7 @@ Cockpit IA intègre désormais un **gestionnaire intelligent de sous-processus**
 ```bash
 npm run build:desktop
 ```
-L'installeur officiel est généré dans `dist/Cockpit IA Setup 0.1.3.exe`.
+L'installeur officiel est généré dans `dist/Cockpit IA Setup 0.1.4.exe`.
 
 ---
 

@@ -21,6 +21,7 @@ import {
   Check,
   Sparkles,
 } from "lucide-react";
+import { useLanguage } from "@/lib/languageContext";
 
 interface RequestDetailDrawerProps {
   request: InboundRequestRecord | null;
@@ -37,6 +38,7 @@ export function RequestDetailDrawer({
   onClose,
   onUpdate,
 }: RequestDetailDrawerProps) {
+  const { t, language } = useLanguage();
   const [formData, setFormData] = useState<ParsedRequest>({
     client_name: null,
     client_email: null,
@@ -76,7 +78,7 @@ export function RequestDetailDrawer({
           intent: "other",
           urgency: "medium",
           requested_items: [],
-          summary: "Message non structuré nécessitant une saisie manuelle.",
+          summary: "Unstructured customer message requiring manual input.",
           email_draft: "",
         });
       }
@@ -100,7 +102,7 @@ export function RequestDetailDrawer({
       ...formData,
       requested_items: [
         ...formData.requested_items,
-        { product_name: "Nouvel article", quantity: 1 },
+        { product_name: language === "en" ? "New item" : "Nouvel article", quantity: 1 },
       ],
     });
   };
@@ -135,9 +137,25 @@ export function RequestDetailDrawer({
 
   const totalEurFormatted = (calculatedTotalCents / 100).toFixed(2);
 
-  // Brouillon d'email professionnel : utilise le draft de l'IA s'il existe, sinon compose dynamiquement
-  const clientDisplayName = formData.client_name || "Madame, Monsieur";
-  const defaultGeneratedDraft = `Bonjour ${clientDisplayName},
+  // Compose dynamic email draft based on language
+  const clientDisplayName = formData.client_name || (language === "en" ? "Dear Customer" : "Madame, Monsieur");
+  const defaultGeneratedDraft = language === "en"
+    ? `Hello ${clientDisplayName},
+
+Thank you for your quotation request.
+
+Here is the breakdown of our commercial proposal:
+${itemsBreakdown.map((it) => `- ${it.quantity}x ${it.name} ${it.matchedSku ? `(SKU: ${it.matchedSku})` : ""} : ${it.unitPriceEur} € excl. VAT — Subtotal : ${it.lineTotalEur} € excl. VAT`).join("\n")}
+
+Total Amount : ${totalEurFormatted} € excl. VAT
+Lead Time : Dispatch within 24h to 48h.
+Availability : In stock.
+
+This quote is valid for 30 days. Feel free to contact us for any questions.
+
+Best regards,
+Sales Department`
+    : `Bonjour ${clientDisplayName},
 
 Nous faisons suite à votre demande et nous vous en remercions.
 
@@ -185,7 +203,6 @@ Le Service Commercial`;
       });
 
       if (res.ok) {
-        // Envoi automatique de l'email de devis au client via la route d'expédition
         if (targetStatus === "processed" && formData.client_email) {
           try {
             const smtpHost = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_host") || "pro.eu.turbo-smtp.com" : "pro.eu.turbo-smtp.com";
@@ -199,7 +216,9 @@ Le Service Commercial`;
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 to: formData.client_email,
-                subject: `Proposition commerciale & Devis — ${formData.summary || "Votre commande"}`,
+                subject: language === "en"
+                  ? `Commercial Quote Proposal — ${formData.summary || "Your Order"}`
+                  : `Proposition commerciale & Devis — ${formData.summary || "Votre commande"}`,
                 text: activeEmailDraft,
                 smtpConfig: {
                   host: smtpHost,
@@ -218,8 +237,10 @@ Le Service Commercial`;
         setStatus(targetStatus);
         setFeedbackMsg(
           targetStatus === "processed"
-            ? "✓ Demande validée, stock déduit et devis expédié par email au client !"
-            : "Modifications enregistrées."
+            ? t.drawer.validatedSuccess
+            : targetStatus === "needs_manual_handling"
+            ? t.drawer.manualSuccess
+            : t.drawer.savedSuccess
         );
         onUpdate();
         if (targetStatus === "processed") {
@@ -230,7 +251,7 @@ Le Service Commercial`;
       }
     } catch (err) {
       console.error("Erreur de sauvegarde:", err);
-      setFeedbackMsg("Erreur lors de la mise à jour.");
+      setFeedbackMsg(t.common.error);
     } finally {
       setIsSaving(false);
     }
@@ -244,7 +265,7 @@ Le Service Commercial`;
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-base sm:text-lg font-bold text-white">
-                Revue & Validation Human-in-the-Loop
+                {t.drawer.title}
               </h2>
               <StatusBadge status={status} />
             </div>
@@ -279,7 +300,7 @@ Le Service Commercial`;
           <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Message Brut Client (Inbound)
+                {t.drawer.sectionOriginalEmail}
               </span>
               <span className="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
                 <Cpu className="w-3 h-3 text-blue-400" />
@@ -296,7 +317,7 @@ Le Service Commercial`;
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4" />
-                Données Extraites (Ajustables avant validation)
+                {t.drawer.subtitle}
               </h3>
             </div>
 
@@ -305,7 +326,7 @@ Le Service Commercial`;
               <div>
                 <label className="block text-slate-300 font-medium mb-1 flex items-center gap-1">
                   <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                  Nom du Client / Entreprise
+                  {t.requests.formClientName}
                 </label>
                 <input
                   type="text"
@@ -319,7 +340,7 @@ Le Service Commercial`;
               <div>
                 <label className="block text-slate-300 font-medium mb-1 flex items-center gap-1">
                   <Mail className="w-3.5 h-3.5 text-slate-400" />
-                  Email de Contact
+                  {t.requests.formClientEmail}
                 </label>
                 <input
                   type="email"
@@ -335,32 +356,32 @@ Le Service Commercial`;
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-slate-300 font-medium mb-1">
-                  Intention Détectée
+                  {t.requests.formIntent}
                 </label>
                 <select
                   value={formData.intent}
                   onChange={(e) => setFormData({ ...formData, intent: e.target.value as any })}
                   className="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg px-3 text-slate-100 focus:outline-none focus:border-blue-500"
                 >
-                  <option value="quote_request">Demande de Devis</option>
-                  <option value="information">Information</option>
-                  <option value="complaint">Réclamation</option>
-                  <option value="other">Autre</option>
+                  <option value="quote_request">{t.badges.intentQuote}</option>
+                  <option value="information">{t.badges.intentInfo}</option>
+                  <option value="complaint">{t.badges.intentComplaint}</option>
+                  <option value="other">{t.badges.intentOther}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-slate-300 font-medium mb-1">
-                  Niveau d'Urgence
+                  {t.requests.formUrgency}
                 </label>
                 <select
                   value={formData.urgency}
                   onChange={(e) => setFormData({ ...formData, urgency: e.target.value as any })}
                   className="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg px-3 text-slate-100 focus:outline-none focus:border-blue-500"
                 >
-                  <option value="low">Basse</option>
-                  <option value="medium">Moyenne</option>
-                  <option value="high">Haute (⚡ Urgent)</option>
+                  <option value="low">{t.badges.urgencyLow}</option>
+                  <option value="medium">{t.badges.urgencyMedium}</option>
+                  <option value="high">{t.badges.urgencyHigh}</option>
                 </select>
               </div>
             </div>
@@ -368,7 +389,7 @@ Le Service Commercial`;
             {/* Résumé */}
             <div>
               <label className="block text-slate-300 font-medium mb-1">
-                Résumé Automatique
+                {t.common.description}
               </label>
               <input
                 type="text"
@@ -383,7 +404,7 @@ Le Service Commercial`;
               <div className="flex items-center justify-between mb-2">
                 <label className="font-medium text-slate-300 flex items-center gap-1.5">
                   <PackageCheck className="w-3.5 h-3.5 text-blue-400" />
-                  Articles Demandés (Réconciliation Stock)
+                  {t.drawer.sectionQuoteSummary}
                 </label>
                 <button
                   type="button"
@@ -391,13 +412,13 @@ Le Service Commercial`;
                   className="text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Ajouter une ligne
+                  {t.drawer.addItemBtn}
                 </button>
               </div>
 
               {formData.requested_items.length === 0 ? (
                 <div className="p-4 rounded-lg bg-slate-950 border border-slate-800/80 text-center text-slate-400">
-                  Aucun article extrait automatiquement. Cliquez sur 'Ajouter une ligne'.
+                  {t.drawer.addItemBtn}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -417,22 +438,22 @@ Le Service Commercial`;
                           type="text"
                           value={item.product_name}
                           onChange={(e) => handleItemChange(idx, "product_name", e.target.value)}
-                          placeholder="Nom du produit"
+                          placeholder={t.catalog.formName}
                           className="flex-1 bg-transparent border-0 text-slate-100 focus:outline-none focus:ring-0"
                         />
 
                         {matchedProduct ? (
                           <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                            {matchedProduct.quantity_available} dispo ({(matchedProduct.unit_price_cents / 100).toFixed(2)} €)
+                            {matchedProduct.quantity_available} {t.common.stock} ({(matchedProduct.unit_price_cents / 100).toFixed(2)} €)
                           </span>
                         ) : (
                           <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">
-                            Hors catalogue
+                            {t.badges.intentOther}
                           </span>
                         )}
 
                         <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded px-2 py-1">
-                          <span className="text-[10px] text-slate-400">Qté:</span>
+                          <span className="text-[10px] text-slate-400">{t.common.quantity}:</span>
                           <input
                             type="number"
                             min="1"
@@ -462,7 +483,7 @@ Le Service Commercial`;
             <div className="flex items-center justify-between pb-2 border-b border-blue-500/20">
               <div className="flex items-center gap-2 text-blue-300 font-bold">
                 <Sparkles className="w-4 h-4 text-blue-400" />
-                <span>✉️ Réponse Email Générée par l'IA (Prête à envoyer)</span>
+                <span>{t.drawer.sectionDraftEmail}</span>
               </div>
 
               <button
@@ -473,12 +494,12 @@ Le Service Commercial`;
                 {copiedDraft ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-white" />
-                    <span>Copié !</span>
+                    <span>{t.drawer.copiedText}</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Copier la réponse email</span>
+                    <span>{t.drawer.copyDraftBtn}</span>
                   </>
                 )}
               </button>
@@ -492,8 +513,8 @@ Le Service Commercial`;
             />
 
             <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-              <span>Montant chiffré calculé : <strong className="text-white">{totalEurFormatted} € HT</strong></span>
-              <span className="text-blue-300">Généré sur mesure pour {clientDisplayName}</span>
+              <span>{t.drawer.totalHT} : <strong className="text-white">{totalEurFormatted} €</strong></span>
+              <span className="text-blue-300">{clientDisplayName}</span>
             </div>
           </div>
         </div>
@@ -507,7 +528,7 @@ Le Service Commercial`;
               className="inline-flex items-center gap-1.5 px-3.5 py-2 font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
             >
               <Save className="w-3.5 h-3.5" />
-              Sauvegarder
+              {t.drawer.saveChangesBtn}
             </button>
 
             {status !== "needs_manual_handling" && (
@@ -517,7 +538,7 @@ Le Service Commercial`;
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 font-semibold rounded-lg bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 border border-amber-700/40 transition-all cursor-pointer"
               >
                 <AlertCircle className="w-3.5 h-3.5" />
-                Revue Manuelle
+                {t.drawer.markNeedsManualBtn}
               </button>
             )}
           </div>
@@ -528,7 +549,7 @@ Le Service Commercial`;
             className="inline-flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
           >
             <CheckCircle2 className="w-4 h-4" />
-            {status === "processed" ? "Demande déjà Validée" : "Valider & Traiter (Approve)"}
+            {status === "processed" ? t.badges.processed : t.drawer.validateAndSendBtn}
           </button>
         </div>
       </div>
