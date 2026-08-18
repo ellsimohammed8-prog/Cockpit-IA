@@ -6,15 +6,26 @@ export async function POST(req: Request) {
     const data = await req.json().catch(() => ({}));
     const { to, subject, text, body: legacyBody, smtpConfig } = data;
 
-    const recipient = to || "commercial@votre-entreprise.fr";
-    const emailText = text || legacyBody || "Bonjour, veuillez trouver ci-joint votre devis commercial.";
-    const emailSubject = subject || "Votre devis commercial - Cockpit IA";
-
     const host = smtpConfig?.host || smtpConfig?.smtpServer || process.env.SMTP_HOST || "pro.eu.turbo-smtp.com";
     const port = Number(smtpConfig?.port || smtpConfig?.smtpPort) || Number(process.env.SMTP_PORT) || 465;
     const user = smtpConfig?.user || process.env.SMTP_USER || "";
     const pass = smtpConfig?.pass || process.env.SMTP_PASS || "";
-    const fromEmail = smtpConfig?.fromEmail || (user.includes("@") ? user : "commercial@votre-entreprise.fr");
+
+    const candidateRecipient = to && String(to).includes("@") ? String(to).trim() : (smtpConfig?.recipient && String(smtpConfig.recipient).includes("@") ? String(smtpConfig.recipient).trim() : "");
+    const recipient = candidateRecipient || (user && user.includes("@") ? user.trim() : "commercial@votre-entreprise.fr");
+
+    const emailText = text || legacyBody || "Bonjour, veuillez trouver ci-joint votre devis commercial.";
+    const emailSubject = subject || "Votre devis commercial - Cockpit IA";
+    
+    // Ensure fromEmail has a valid format with @
+    let fromEmail = "commercial@votre-entreprise.fr";
+    if (smtpConfig?.fromEmail && String(smtpConfig.fromEmail).includes("@")) {
+      fromEmail = String(smtpConfig.fromEmail).trim();
+    } else if (user && user.includes("@")) {
+      fromEmail = user.trim();
+    } else if (candidateRecipient) {
+      fromEmail = candidateRecipient;
+    }
 
     if (!user || !pass) {
       return NextResponse.json({

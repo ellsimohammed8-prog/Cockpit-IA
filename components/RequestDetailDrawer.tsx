@@ -205,11 +205,24 @@ Le Service Commercial`;
       if (res.ok) {
         if (targetStatus === "processed" && formData.client_email) {
           try {
-            const smtpHost = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_host") || "pro.eu.turbo-smtp.com" : "pro.eu.turbo-smtp.com";
-            const smtpPort = typeof window !== "undefined" ? Number(localStorage.getItem("cockpit_smtp_port")) || 465 : 465;
-            const smtpUser = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_user") || "08049ca61a52869cd262" : "08049ca61a52869cd262";
-            const smtpPass = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_pass") || "NkR46nSfCdg39iVwFPOq" : "NkR46nSfCdg39iVwFPOq";
-            const smtpFrom = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_from") || "commercial@votre-entreprise.fr" : "commercial@votre-entreprise.fr";
+            const outboundMode = typeof window !== "undefined" ? localStorage.getItem("cockpit_outbound_mode") || "turbosmtp" : "turbosmtp";
+            const inboundEmail = typeof window !== "undefined" ? localStorage.getItem("cockpit_inbound_email") || "" : "";
+            const inboundPass = typeof window !== "undefined" ? localStorage.getItem("cockpit_inbound_password") || "" : "";
+            const inboundProvider = typeof window !== "undefined" ? localStorage.getItem("cockpit_inbound_provider") || "gmail" : "gmail";
+
+            let smtpHost = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_host") || "pro.eu.turbo-smtp.com" : "pro.eu.turbo-smtp.com";
+            let smtpPort = typeof window !== "undefined" ? Number(localStorage.getItem("cockpit_smtp_port")) || 465 : 465;
+            let smtpUser = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_user") || "" : "";
+            let smtpPass = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_pass") || "" : "";
+            let smtpFrom = typeof window !== "undefined" ? localStorage.getItem("cockpit_smtp_from") || inboundEmail || "commercial@votre-entreprise.fr" : "commercial@votre-entreprise.fr";
+
+            if (outboundMode === "same_as_inbound") {
+              smtpHost = inboundProvider === "gmail" ? "smtp.gmail.com" : "smtp.office365.com";
+              smtpPort = inboundProvider === "gmail" ? 465 : 587;
+              smtpUser = inboundEmail;
+              smtpPass = inboundPass;
+              smtpFrom = inboundEmail;
+            }
 
             await fetch("/api/send-email", {
               method: "POST",

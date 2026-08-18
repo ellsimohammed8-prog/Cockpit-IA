@@ -510,12 +510,20 @@ export function SettingsModal({
       pass = inboundAppPassword.trim();
     }
 
+    const testRecipient = (inboundEmail && inboundEmail.includes("@"))
+      ? inboundEmail.trim()
+      : (user && user.includes("@") ? user.trim() : "commercial@votre-entreprise.fr");
+
+    const testFrom = (inboundEmail && inboundEmail.includes("@"))
+      ? inboundEmail.trim()
+      : (user && user.includes("@") ? user.trim() : "commercial@votre-entreprise.fr");
+
     try {
       const res = await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: user || "commercial@votre-entreprise.fr",
+          to: testRecipient,
           subject: language === "en" ? "⚡ Test Email - Cockpit IA" : "⚡ Email de Test - Cockpit IA",
           text: language === "en"
             ? "This is a test email confirming your outbound SMTP configuration is operational."
@@ -525,7 +533,8 @@ export function SettingsModal({
             port,
             user,
             pass,
-            fromEmail: user,
+            fromEmail: testFrom,
+            recipient: testRecipient,
           },
         }),
       });
